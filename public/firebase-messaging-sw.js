@@ -26,10 +26,10 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload.notification?.body || 'Time to complete your habits!',
     icon: '/logo192.png', // Uses the new flame icon you generated!
-    badge: '/favicon.svg' // The small monochrome icon for the Android status bar
+    // badge: '/favicon.svg' // The small monochrome icon for the Android status bar
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 6. The PWA "Fetch" Trick

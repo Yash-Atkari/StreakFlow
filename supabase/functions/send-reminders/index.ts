@@ -49,6 +49,9 @@ Deno.serve(async (req) => {
     
     console.log(`Successfully sent ${response.successCount} messages.`);
 
+    // 7. CLEANUP: Force Firebase to close its background connections so Deno can sleep!
+    // await firebaseApp.delete();
+
     return new Response(
       JSON.stringify({ sent: response.successCount, failures: response.failureCount }), 
       { headers: { "Content-Type": "application/json" }, status: 200 }
