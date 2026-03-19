@@ -1,0 +1,140 @@
+/* Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9); /* darker */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Bottom sheet */
+.modal-card {
+  background: #000;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  border: grey;
+
+  transform: translateY(100%);
+  animation: slideUp 0.3s ease forwards;
+}
+
+/* Animation */
+@keyframes slideUp {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.modal-card.closing {
+  animation: slideDown 0.25s ease forwards;
+}
+
+@keyframes slideDown {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  background: #2a2a2a;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.input:focus {
+  outline: none;
+}
+
+/* Pills */
+.pill {
+  background: #2a2a2a;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #ccc;
+}
+
+.pill.active {
+  background: #ff6b00;
+  color: white;
+}
+
+/* Days grid */
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Toggle */
+.toggle {
+  width: 40px;
+  height: 22px;
+  background: #333;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+}
+
+.toggle.active {
+  background: #ff6b00;
+}
+
+.toggle-circle {
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: 0.2s;
+}
+
+.toggle.active .toggle-circle {
+  left: 20px;
+}
+
+/* Time inputs */
+.time-row {
+  display: flex;
+  gap: 10px;
+}
+
+.time-box {
+  flex: 1;
+}
+
+.time-input {
+  width: 100%;
+  background: #2a2a2a;
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  color: white;
+}
+
+/* Button */
+.primary-btn {
+  width: 100%;
+  background: #ff6b00;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  color: white;
+  font-weight: 500;
+  margin-top: 10px;
+}
