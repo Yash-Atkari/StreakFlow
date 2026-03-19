@@ -23,6 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 # Firebase Secrets
-*.json
+streakflow-df8d6-firebase-adminsdk-fbsvc-e130ff35b8.json
 !package.json
 !package-lock.json

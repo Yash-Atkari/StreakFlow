@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import { FaFire } from "react-icons/fa";
+import { HiFire } from "react-icons/hi";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -94,7 +94,7 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-3">
           <h3 style={{ fontWeight: "bold", color: "white" }}>
-            <FaFire color="#ff6b00" /> StreakFlow
+            <HiFire color="#ff6b00" /> StreakFlow
           </h3>
         </div>
 

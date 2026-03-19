@@ -1,11 +1,12 @@
-  import { useEffect, useState } from "react";
-  import { supabase } from "../services/supabaseClient";
-  import AddRitualModal from "../components/AddRitualModal";
-  import RitualCard from "../components/RitualCard";
-  import CircularProgress from "../components/CircularProgress";
-  import { HiFire } from "react-icons/hi";
-  import { FiLogOut, FiAlertCircle } from "react-icons/fi"; // Added alert icon
+import { useEffect, useState } from "react";
+import { supabase } from "../services/supabaseClient";
+import AddRitualModal from "../components/AddRitualModal";
+import RitualCard from "../components/RitualCard";
+import CircularProgress from "../components/CircularProgress";
+import { HiFire } from "react-icons/hi";
+import { FiLogOut, FiAlertCircle } from "react-icons/fi"; // Added alert icon
 import StreakCelebration from "../components/StreakCelebration"; // 1. Import it
+import { setupNotifications } from './services/fcmService.js';
 
   export default function Home() {
     const [rituals, setRituals] = useState([]);
