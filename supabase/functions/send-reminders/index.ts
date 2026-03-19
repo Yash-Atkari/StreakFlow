@@ -2,20 +2,16 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { initializeApp, cert } from 'npm:firebase-admin/app'
 import { getMessaging } from 'npm:firebase-admin/messaging'
 
-// 1. Load the Firebase Service Account Secret
 const serviceAccountEnv = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_KEY');
 if (!serviceAccountEnv) {
   throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY secret');
 }
 
-// 2. Initialize Firebase Admin
 const serviceAccount = JSON.parse(serviceAccountEnv);
 const firebaseApp = initializeApp({
   credential: cert(serviceAccount)
 });
 
-// 3. Initialize Supabase Admin Client
-// Supabase automatically provides the URL and SERVICE_ROLE_KEY in the background!
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -23,37 +19,51 @@ const supabase = createClient(
 
 Deno.serve(async (req) => {
   try {
-    // 4. Fetch all active device tokens from your database
-    const { data: tokens, error } = await supabase.from('fcm_tokens').select('token');
+    // 1. Fetch tokens
+    const { data: tokens, error: tokenError } = await supabase.from('fcm_tokens').select('token');
+    if (tokenError) throw tokenError;
 
-    if (error) throw error;
-    
-    // If no tokens exist, exit gracefully
     if (!tokens || tokens.length === 0) {
-      console.log("No tokens found. Total notifications sent: 0");
-      return new Response(JSON.stringify({ sent: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
     }
 
-    // 5. Prepare the notification payload
+    // 2. NEW: Fetch one incomplete task/ritual for today
+    // Replace 'rituals' with your actual table name (e.g., 'habits' or 'tasks')
+    const { data: rituals, error: ritualError } = await supabase
+      .from('rituals') 
+      .select('name')
+      .eq('is_completed', false)
+      .limit(1)
+      .single();
+
+    // Determine the message body based on whether a task was found
+    const taskName = rituals ? rituals.name : "your daily habits";
+    const messageBody = `Time to complete ${taskName}!`;
+
+    // 3. Prepare the notification payload
     const registrationTokens = tokens.map(t => t.token);
+    
     const message = {
+      tokens: registrationTokens,
+      // We use 'notification' for basic display, but 'android' to control icons
       notification: {
         title: '🔥 StreakFlow Reminder',
-        body: 'Time to complete your daily habits and keep your streak alive!',
+        body: messageBody,
       },
-      tokens: registrationTokens,
+      android: {
+        notification: {
+          // Setting this to your small icon name ensures the "S" (Large Icon) is hidden
+          // and only the small status bar icon (the fire) shows up.
+          icon: 'ic_notification_fire', 
+          color: '#f44336', // Optional: theme color for the icon
+        }
+      }
     };
 
-    // 6. Send the push notifications via Firebase
     const response = await getMessaging(firebaseApp).sendEachForMulticast(message);
     
-    console.log(`Successfully sent ${response.successCount} messages.`);
-
-    // 7. CLEANUP: Force Firebase to close its background connections so Deno can sleep!
-    // await firebaseApp.delete();
-
     return new Response(
-      JSON.stringify({ sent: response.successCount, failures: response.failureCount }), 
+      JSON.stringify({ sent: response.successCount, task: taskName }), 
       { headers: { "Content-Type": "application/json" }, status: 200 }
     );
 
