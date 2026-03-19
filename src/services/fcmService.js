@@ -3,7 +3,14 @@ import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { supabase } from "./supabaseClient";
 
-const firebaseConfig = { /* ... your config ... */ };
+const firebaseConfig = { 
+  apiKey: "AIzaSyAeDj9rruFAACp-w0rEDkMO5rLyzgz76mg",
+  authDomain: "streakflow-df8d6.firebaseapp.com",
+  projectId: "streakflow-df8d6",
+  storageBucket: "streakflow-df8d6.firebasestorage.app",
+  messagingSenderId: "342195661254",
+  appId: "1:342195661254:web:309978004dd21a9bf7aac7"
+ };
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
@@ -15,7 +22,7 @@ export const setupNotifications = async (userId) => {
 
     // 2. Get FCM Token
     const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_API_KEY
+      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
     });
 
     if (token) {
