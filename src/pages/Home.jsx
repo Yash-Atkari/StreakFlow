@@ -180,7 +180,7 @@ import { setupNotifications } from '../services/fcmService.js';
           onClick={() => { setOpen(true); setSelectedRitual(null); }}
           className="floating-add-btn"
           style={{
-          position: "absolute",
+          position: "fixed",
           bottom: "20px",
           right: "20px",
           width: "60px",
