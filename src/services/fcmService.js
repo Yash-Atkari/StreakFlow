@@ -3,14 +3,16 @@ import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { supabase } from "./supabaseClient";
 
+// Using Vite environment variables to secure your configuration
 const firebaseConfig = { 
-  apiKey: "AIzaSyAeDj9rruFAACp-w0rEDkMO5rLyzgz76mg",
-  authDomain: "streakflow-df8d6.firebaseapp.com",
-  projectId: "streakflow-df8d6",
-  storageBucket: "streakflow-df8d6.firebasestorage.app",
-  messagingSenderId: "342195661254",
-  appId: "1:342195661254:web:309978004dd21a9bf7aac7"
- };
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+ 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
@@ -18,25 +20,34 @@ export const setupNotifications = async (userId) => {
   try {
     // 1. Request Permission
     const permission = await Notification.requestPermission();
-    if (permission !== "granted") return;
+    if (permission !== "granted") {
+      console.warn("Notification permission denied.");
+      return;
+    }
 
-    // 2. Get FCM Token
+    // 2. Get FCM Token using your new VAPID key
     const token = await getToken(messaging, {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
     });
 
     if (token) {
       // 3. Save Token to Supabase
-      // Use upsert so we don't create duplicate tokens for the same user/device
-      await supabase
+      // The 'onConflict' ensures we don't spam the table with duplicate tokens
+      const { error } = await supabase
         .from("fcm_tokens")
-        .upsert({ user_id: userId, token: token }, { onConflict: 'token' });
+        .upsert(
+          { user_id: userId, token: token }, 
+          { onConflict: 'token' }
+        );
+
+      if (error) throw error;
+      console.log("FCM Token synced successfully.");
     }
 
     // 4. Handle Foreground Messages
     onMessage(messaging, (payload) => {
       console.log("Foreground message received:", payload);
-      // You could trigger a custom toast or UI update here
+      // Optional: Add a toast notification library here to show a UI alert
     });
 
   } catch (error) {
