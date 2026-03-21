@@ -3,18 +3,15 @@ import { isCompletedToday, calculateNewStreak } from "../utils/streak";
 import { FiLock, FiTrash2, FiClock, FiEdit2 } from "react-icons/fi";
 import { HiFire } from "react-icons/hi";
 
-// Added onCelebrate to props
 export default function RitualCard({ ritual, refresh, onEdit, openModal, onCelebrate }) {
 
-  // 2. Calculate "isDone" dynamically based on the date
+  // 1. Calculate the dynamic status
   const isDone = isCompletedToday(ritual.last_completed_date);
   
   const isWithinWindow = () => {
     if (!ritual.submit_window) return true;
-
     const now = new Date();
     const current = now.toTimeString().slice(0, 5); // "HH:MM"
-
     return current >= ritual.start_time && current <= ritual.end_time;
   };
 
@@ -23,14 +20,14 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
   const handleComplete = async () => {
     if (!canComplete) return;
 
-    // 🔁 Undo completion for TODAY
+    // 2. Logic for Undo (if already done today)
     if (isDone) {
       await supabase
         .from("rituals")
         .update({
-          completed: false, // Keeping for backward compatibility
+          completed: false, // Legacy support
           current_streak: Math.max((ritual.current_streak || 1) - 1, 0),
-          last_completed_date: null, // Clearing the date resets it to "undone"
+          last_completed_date: null, 
         })
         .eq("id", ritual.id);
 
@@ -38,7 +35,7 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
       return;
     }
 
-    // 🔥 Mark complete for TODAY
+    // 3. Logic for Completion
     const newStreak = calculateNewStreak(ritual);
 
     if (newStreak > (ritual.current_streak || 0) && onCelebrate) {
@@ -50,7 +47,7 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
       .update({
         completed: true,
         current_streak: newStreak,
-        last_completed_date: new Date().toISOString(), // Save the exact timestamp
+        last_completed_date: new Date().toISOString(),
       })
       .eq("id", ritual.id);
 
@@ -74,7 +71,8 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
       style={{
         background: "#1a1a1a",
         borderRadius: "16px",
-        opacity: ritual.completed ? 0.8 : 1, // Visual feedback for completed
+        // 4. Use isDone for container opacity
+        opacity: isDone ? 0.8 : 1, 
         transition: "0.3s ease"
       }}
     >
@@ -83,7 +81,7 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
         <div
           onClick={handleComplete}
           style={{
-            width: "24px", // Made slightly larger for better touch
+            width: "24px",
             height: "24px",
             borderRadius: "50%",
             border: canComplete ? "2px solid #ff6b00" : "2px solid #333",
@@ -92,12 +90,13 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
             justifyContent: "center",
             cursor: canComplete ? "pointer" : "not-allowed",
             marginTop: "2px",
-            background: ritual.completed ? "#ff6b00" : "transparent"
+            // 5. Use isDone for circle background
+            background: isDone ? "#ff6b00" : "transparent"
           }}
         >
           {!canComplete ? (
             <FiLock size={12} color="#888" />
-          ) : ritual.completed ? (
+          ) : isDone ? ( // 6. Use isDone for icon visibility
             <HiFire size={16} color="white" />
           ) : null}
         </div>
@@ -105,8 +104,9 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
         <div>
           <div style={{ 
             fontSize: "15px", 
-            textDecoration: ritual.completed ? "line-through" : "none",
-            color: ritual.completed ? "#888" : "white" 
+            // 7. Use isDone for text styling
+            textDecoration: isDone ? "line-through" : "none",
+            color: isDone ? "#888" : "white" 
           }}>
             {ritual.title}
           </div>
