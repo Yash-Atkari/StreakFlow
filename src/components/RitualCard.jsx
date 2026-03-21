@@ -1,10 +1,13 @@
 import { supabase } from "../services/supabaseClient";
-import { calculateStreak } from "../utils/streak";
+import { isCompletedToday, calculateNewStreak } from "../utils/streak";
 import { FiLock, FiTrash2, FiClock, FiEdit2 } from "react-icons/fi";
 import { HiFire } from "react-icons/hi";
 
 // Added onCelebrate to props
 export default function RitualCard({ ritual, refresh, onEdit, openModal, onCelebrate }) {
+
+  // 2. Calculate "isDone" dynamically based on the date
+  const isDone = isCompletedToday(ritual.last_completed_date);
   
   const isWithinWindow = () => {
     if (!ritual.submit_window) return true;
@@ -20,14 +23,14 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
   const handleComplete = async () => {
     if (!canComplete) return;
 
-    // 🔁 Undo completion
-    if (ritual.completed) {
+    // 🔁 Undo completion for TODAY
+    if (isDone) {
       await supabase
         .from("rituals")
         .update({
-          completed: false,
+          completed: false, // Keeping for backward compatibility
           current_streak: Math.max((ritual.current_streak || 1) - 1, 0),
-          last_completed_date: null,
+          last_completed_date: null, // Clearing the date resets it to "undone"
         })
         .eq("id", ritual.id);
 
@@ -35,21 +38,19 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
       return;
     }
 
-    // 🔥 Mark complete & Calculate Streak
-    const { streak, today } = calculateStreak(ritual);
+    // 🔥 Mark complete for TODAY
+    const newStreak = calculateNewStreak(ritual);
 
-    // TRIGGER CELEBRATION
-    // If the new streak is higher than the old one, trigger the animation
-    if (streak > (ritual.current_streak || 0) && onCelebrate) {
-      onCelebrate(streak);
+    if (newStreak > (ritual.current_streak || 0) && onCelebrate) {
+      onCelebrate(newStreak);
     }
 
     await supabase
       .from("rituals")
       .update({
         completed: true,
-        current_streak: streak,
-        last_completed_date: today,
+        current_streak: newStreak,
+        last_completed_date: new Date().toISOString(), // Save the exact timestamp
       })
       .eq("id", ritual.id);
 

@@ -38,7 +38,7 @@ const getLastRequiredDate = (ritual) => {
 /**
  * Final Streak Logic using your database columns: custom_days & repeat_type
  */
-export const calculateNewStreak = (ritual) => {
+export const calculatNewStreak = (ritual) => {
   const { current_streak, last_completed_date } = ritual;
   
   const today = new Date().toDateString();
