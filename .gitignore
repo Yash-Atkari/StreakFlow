@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 # Firebase Secrets
-streakflow-df8d6-firebase-adminsdk-fbsvc-e130ff35b8.json
+streakflow-1e44b-firebase-adminsdk-fbsvc-591ef1678b.json
 !package.json
 !package-lock.json
 .env

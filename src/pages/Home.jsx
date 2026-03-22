@@ -7,6 +7,8 @@ import { HiFire } from "react-icons/hi";
 import { FiLogOut, FiAlertCircle } from "react-icons/fi"; // Added alert icon
 import StreakCelebration from "../components/StreakCelebration"; // 1. Import it
 import { setupNotifications } from '../services/fcmService.js';
+// import { isRequiredDay } from "../utils/streak";
+
 
   export default function Home() {
     const [rituals, setRituals] = useState([]);
@@ -83,14 +85,14 @@ import { setupNotifications } from '../services/fcmService.js';
         checkDate.setDate(checkDate.getDate() + 1);
 
         // Check every day up until TODAY
-        while (checkDate < today) {
-          // If any day in the past was required but not completed
-          if (isRequiredDay(checkDate, r)) {
-            missed = true;
-            break;
-          }
-          checkDate.setDate(checkDate.getDate() + 1);
-        }
+        // while (checkDate < today) {
+        //   // If any day in the past was required but not completed
+        //   if (isRequiredDay(checkDate, r)) {
+        //     missed = true;
+        //     break;
+        //   }
+        //   checkDate.setDate(checkDate.getDate() + 1);
+        // }
 
         if (missed) {
           updates.push(

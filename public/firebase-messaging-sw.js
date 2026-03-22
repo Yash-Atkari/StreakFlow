@@ -4,12 +4,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-comp
 
 // 2. Your Firebase configuration (Now using injected variables)
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID
+  apiKey: "AIzaSy" + "BgSl4kmde03Tfli6ZHBpo_rNEFbQ8wEb4",
+  authDomain: "streakflow-1e44b.firebaseapp.com",
+  projectId: "streakflow-1e44b",
+  storageBucket: "streakflow-1e44b.firebasestorage.app",
+  messagingSenderId: "907823333122",
+  appId: "1:907823333122:web:ad209ad948c38d651dcc1b"
 };
 
 // 3. Initialize Firebase
