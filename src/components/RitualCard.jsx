@@ -1,5 +1,5 @@
 import { supabase } from "../services/supabaseClient";
-import { isCompletedToday, calculateNewStreak } from "../utils/streak";
+import { isCompletedToday, calculateNewStreak, isDateRequired } from "../utils/streak";
 import { FiLock, FiTrash2, FiClock, FiEdit2 } from "react-icons/fi";
 import { HiFire } from "react-icons/hi";
 
@@ -15,7 +15,8 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
     return current >= ritual.start_time && current <= ritual.end_time;
   };
 
-  const canComplete = isWithinWindow();
+  const isRequiredToday = isDateRequired(ritual, new Date());
+  const canComplete = isWithinWindow() && isRequiredToday;
 
   const handleComplete = async () => {
     if (!canComplete) return;

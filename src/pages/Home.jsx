@@ -7,7 +7,7 @@ import { HiFire } from "react-icons/hi";
 import { FiLogOut, FiAlertCircle } from "react-icons/fi"; // Added alert icon
 import StreakCelebration from "../components/StreakCelebration"; // 1. Import it
 import { setupNotifications } from '../services/fcmService.js';
-// import { isRequiredDay } from "../utils/streak";
+import { isDateRequired, isCompletedToday } from "../utils/streak";
 
 
   export default function Home() {
@@ -62,8 +62,9 @@ import { setupNotifications } from '../services/fcmService.js';
     };
 
     // Stats
-    const total = rituals.length;
-    const completedToday = rituals.filter(r => r.completed).length;
+    const ritualsToday = rituals.filter(r => isDateRequired(r, new Date()));
+    const total = ritualsToday.length;
+    const completedToday = ritualsToday.filter(r => isCompletedToday(r.last_completed_date)).length;
     const progress = total === 0 ? 0 : Math.round((completedToday / total) * 100);
     const longestStreak = Math.max(...rituals.map(r => r.current_streak || 0), 0);
 
@@ -85,14 +86,14 @@ import { setupNotifications } from '../services/fcmService.js';
         checkDate.setDate(checkDate.getDate() + 1);
 
         // Check every day up until TODAY
-        // while (checkDate < today) {
-        //   // If any day in the past was required but not completed
-        //   if (isRequiredDay(checkDate, r)) {
-        //     missed = true;
-        //     break;
-        //   }
-        //   checkDate.setDate(checkDate.getDate() + 1);
-        // }
+        while (checkDate < today) {
+          // If any day in the past was required but not completed
+          if (isDateRequired(r, checkDate)) {
+            missed = true;
+            break;
+          }
+          checkDate.setDate(checkDate.getDate() + 1);
+        }
 
         if (missed) {
           updates.push(

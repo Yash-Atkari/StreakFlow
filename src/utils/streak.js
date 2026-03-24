@@ -9,34 +9,40 @@ export const isCompletedToday = (lastCompletedDate) => {
 /**
  * Checks if a specific date was a "required" day for the ritual.
  */
-const isDateRequired = (ritual, date) => {
+export const isDateRequired = (ritual, date) => {
+  if (!date) return false;
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+
   if (ritual.repeat_type === 'daily') return true;
-  
+
   if (ritual.repeat_type === 'custom' && ritual.custom_days) {
-    return ritual.custom_days.includes(date.getDay());
+    return ritual.custom_days.includes(d.getDay());
   }
-  
+
+  if (ritual.repeat_type === 'weekly' || ritual.repeat_type === 'biweekly') {
+    const createdDate = new Date(ritual.created_at);
+    createdDate.setHours(0, 0, 0, 0);
+
+    // Must be on the same day of the week
+    if (d.getDay() !== createdDate.getDay()) return false;
+
+    if (ritual.repeat_type === 'biweekly') {
+      const diffTime = Math.abs(d - createdDate);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffWeeks = Math.floor(diffDays / 7);
+      return diffWeeks % 2 === 0;
+    }
+
+    return true; // weekly
+  }
+
   return false;
 };
 
 /**
- * Finds the most recent date (before today) that the task was required.
- */
-const getLastRequiredDate = (ritual) => {
-  let checkDate = new Date();
-  
-  // Look back up to 7 days to find the last required session
-  for (let i = 1; i <= 7; i++) {
-    checkDate.setDate(checkDate.getDate() - 1);
-    if (isDateRequired(ritual, checkDate)) {
-      return checkDate.toDateString();
-    }
-  }
-  return null;
-};
-
-/**
- * Final Streak Logic using your database columns: custom_days & repeat_type
+ * Calculates the new streak when a ritual is completed.
+ * It strictly adds 1 because missed days are already zeroed out by `resetMissedStreaks` in Home.
  */
 export const calculateNewStreak = (ritual) => {
   const { current_streak, last_completed_date } = ritual;
@@ -46,23 +52,9 @@ export const calculateNewStreak = (ritual) => {
 
   // 1. If already done today, keep the current streak
   if (lastDate === today) {
-    return current_streak;
+    return current_streak || 0;
   }
 
-  // 2. First completion ever
-  if (!lastDate) {
-    return 1;
-  }
-
-  // 3. Find when it was last "due"
-  const lastRequired = getLastRequiredDate(ritual);
-
-  // 4. If they did it on the last required day, increment. 
-  // If no last required day found (error fallback), assume it's a new streak.
-  if (lastDate === lastRequired) {
-    return (current_streak || 0) + 1;
-  }
-
-  // 5. Missed the last required day = Reset
-  return 1;
+  // 2. Increment streak by 1
+  return (current_streak || 0) + 1;
 };
