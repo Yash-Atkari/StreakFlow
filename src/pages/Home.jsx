@@ -143,24 +143,6 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
       }
     };
 
-    // Chevron sort handler
-    const handleMove = (index, direction) => {
-      const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= rituals.length) return;
-
-      const reordered = [...rituals];
-      const [movedItem] = reordered.splice(index, 1);
-      reordered.splice(nextIndex, 0, movedItem);
-
-      setRituals(reordered);
-
-      // Save order to localStorage
-      if (user?.id) {
-        const orderIds = reordered.map(r => r.id);
-        localStorage.setItem(`streakflow_order_${user.id}`, JSON.stringify(orderIds));
-      }
-    };
-
     // HTML5 Drag and Drop Handlers
     const handleDragStart = (e, index) => {
       setDraggedIndex(index);
@@ -284,10 +266,6 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
                 onEdit={setSelectedRitual}
                 openModal={() => setOpen(true)}
                 onCelebrate={(streak) => setCelebrationStreak(streak)} // 3. Pass the trigger
-                isFirst={index === 0}
-                isLast={index === rituals.length - 1}
-                onMoveUp={() => handleMove(index, -1)}
-                onMoveDown={() => handleMove(index, 1)}
               />
             </div>
           ))

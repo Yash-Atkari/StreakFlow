@@ -1,6 +1,6 @@
 import { supabase } from "../services/supabaseClient";
 import { isCompletedToday, calculateNewStreak, isDateRequired } from "../utils/streak";
-import { FiLock, FiTrash2, FiClock, FiEdit2, FiMenu, FiChevronUp, FiChevronDown } from "react-icons/fi";
+import { FiLock, FiTrash2, FiClock, FiEdit2, FiMenu } from "react-icons/fi";
 import { HiFire } from "react-icons/hi";
 
 export default function RitualCard({ 
@@ -8,11 +8,7 @@ export default function RitualCard({
   refresh, 
   onEdit, 
   openModal, 
-  onCelebrate,
-  isFirst,
-  isLast,
-  onMoveUp,
-  onMoveDown
+  onCelebrate
 }) {
 
   // 1. Calculate the dynamic status
@@ -163,26 +159,6 @@ export default function RitualCard({
 
       {/* RIGHT */}
       <div className="d-flex align-items-center gap-3">
-        {/* Chevron Up */}
-        <FiChevronUp
-          size={18}
-          className={`icon-btn ${isFirst ? 'disabled' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isFirst) onMoveUp();
-          }}
-          title="Move Up"
-        />
-        {/* Chevron Down */}
-        <FiChevronDown
-          size={18}
-          className={`icon-btn ${isLast ? 'disabled' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isLast) onMoveDown();
-          }}
-          title="Move Down"
-        />
         {/* Edit Button */}
         <FiEdit2
           size={18}
