@@ -58,3 +58,67 @@ html, body, #root {
     padding: 8px; /* make it square */
   }
 }
+
+/* Drag and Drop styles */
+.draggable-ritual-container {
+  transition: transform 0.2s ease, opacity 0.2s ease, border 0.2s ease;
+  position: relative;
+}
+
+.draggable-ritual-container.dragging {
+  opacity: 0.3;
+  transform: scale(0.98);
+}
+
+.draggable-ritual-container.drag-over::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #ff6b00;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.drag-handle:hover {
+  color: #ff6b00;
+  transform: scale(1.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.icon-btn {
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.icon-btn:hover {
+  color: #ff6b00;
+  transform: scale(1.15);
+}
+
+.icon-btn.disabled {
+  color: #333 !important;
+  cursor: not-allowed;
+  transform: none !important;
+}

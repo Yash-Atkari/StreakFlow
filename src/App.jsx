@@ -24,7 +24,7 @@ export default function App() {
 
   return (
     <div className="bg-black min-h-screen text-white">
-      {user ? <Home /> : <Login />}
+      {user ? <Home user={user} /> : <Login />}
     </div>
   );
 }

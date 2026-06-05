@@ -10,7 +10,7 @@ import { setupNotifications } from '../services/fcmService.js';
 import { isDateRequired, isCompletedToday } from "../utils/streak";
 
 
-  export default function Home() {
+  export default function Home({ user }) {
     const [rituals, setRituals] = useState([]);
     const [open, setOpen] = useState(false);
     const [selectedRitual, setSelectedRitual] = useState(null);
@@ -18,27 +18,25 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
     const [error, setError] = useState(null);
     const [celebrationStreak, setCelebrationStreak] = useState(null); // 2. Add this state
 
+    // Drag and drop states
+    const [draggedIndex, setDraggedIndex] = useState(null);
+    const [dragOverIndex, setDragOverIndex] = useState(null);
+
     // 1. Initial Data Load
     useEffect(() => {
       fetchRituals();
-    }, []);
+    }, [user]);
 
     // Inside Home.jsx
     useEffect(() => {
-      const initFCM = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setupNotifications(user.id);
-        }
-      };
-      initFCM();
-    }, []);
+      if (user) {
+        setupNotifications(user.id);
+      }
+    }, [user]);
 
     const fetchRituals = async () => {
       setLoading(true);
       setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         setError("authentication_required");
@@ -48,15 +46,52 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
 
       const { data, error: fetchError } = await supabase
         .from("rituals")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*");
 
       if (fetchError) {
         setError("fetch_failed");
       } else {
-        setRituals(data || []);
+        let fetched = data || [];
+        
+        // Sort rituals based on saved order in localStorage
+        const userId = user.id;
+        const storedOrder = localStorage.getItem(`streakflow_order_${userId}`);
+        if (storedOrder) {
+          try {
+            const orderIds = JSON.parse(storedOrder);
+            const orderMap = {};
+            orderIds.forEach((id, idx) => {
+              orderMap[id] = idx;
+            });
+            
+            fetched.sort((a, b) => {
+              const indexA = orderMap[a.id] !== undefined ? orderMap[a.id] : -1;
+              const indexB = orderMap[b.id] !== undefined ? orderMap[b.id] : -1;
+              
+              if (indexA === -1 && indexB === -1) {
+                return new Date(b.created_at) - new Date(a.created_at);
+              }
+              if (indexA === -1) return -1; // New items go to the top
+              if (indexB === -1) return 1;
+              return indexA - indexB;
+            });
+          } catch (e) {
+            console.error("Error parsing stored order", e);
+            fetched.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          }
+        } else {
+          fetched.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+
+        // Consolidate order in localStorage
+        if (userId && fetched.length > 0) {
+          const currentOrderIds = fetched.map(r => r.id);
+          localStorage.setItem(`streakflow_order_${userId}`, JSON.stringify(currentOrderIds));
+        }
+
+        setRituals(fetched);
         // Reset streaks after fetching
-        if (data) resetMissedStreaks(data);
+        if (fetched.length > 0) resetMissedStreaks(fetched);
       }
       setLoading(false);
     };
@@ -108,8 +143,72 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
       }
     };
 
+    // Chevron sort handler
+    const handleMove = (index, direction) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= rituals.length) return;
+
+      const reordered = [...rituals];
+      const [movedItem] = reordered.splice(index, 1);
+      reordered.splice(nextIndex, 0, movedItem);
+
+      setRituals(reordered);
+
+      // Save order to localStorage
+      if (user?.id) {
+        const orderIds = reordered.map(r => r.id);
+        localStorage.setItem(`streakflow_order_${user.id}`, JSON.stringify(orderIds));
+      }
+    };
+
+    // HTML5 Drag and Drop Handlers
+    const handleDragStart = (e, index) => {
+      setDraggedIndex(index);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", index.toString());
+    };
+
+    const handleDragOver = (e, index) => {
+      e.preventDefault();
+      if (draggedIndex === null || draggedIndex === index) return;
+      setDragOverIndex(index);
+    };
+
+    const handleDragLeave = () => {
+      setDragOverIndex(null);
+    };
+
+    const handleDrop = (e, index) => {
+      e.preventDefault();
+      if (draggedIndex === null || draggedIndex === index) {
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+        return;
+      }
+
+      const reordered = [...rituals];
+      const [draggedItem] = reordered.splice(draggedIndex, 1);
+      reordered.splice(index, 0, draggedItem);
+
+      setRituals(reordered);
+
+      // Save order to localStorage
+      if (user?.id) {
+        const orderIds = reordered.map(r => r.id);
+        localStorage.setItem(`streakflow_order_${user.id}`, JSON.stringify(orderIds));
+      }
+
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+
     // 2. Handle Authentication Error State
-    if (error === "authentication_required") {
+    if (error === "authentication_required" || !user) {
       return (
         <div className="container py-5 text-center">
           <FiAlertCircle size={48} color="#9ca3af" className="mb-3" />
@@ -166,15 +265,31 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
             No rituals defined. Start with one.
           </div>
         ) : (
-          rituals.map((r) => (
-            <RitualCard
+          rituals.map((r, index) => (
+            <div
               key={r.id}
-              ritual={r}
-              refresh={fetchRituals}
-              onEdit={setSelectedRitual}
-              openModal={() => setOpen(true)}
-              onCelebrate={(streak) => setCelebrationStreak(streak)} // 3. Pass the trigger
-            />
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`draggable-ritual-container ${
+                draggedIndex === index ? "dragging" : ""
+              } ${dragOverIndex === index ? "drag-over" : ""}`}
+            >
+              <RitualCard
+                ritual={r}
+                refresh={fetchRituals}
+                onEdit={setSelectedRitual}
+                openModal={() => setOpen(true)}
+                onCelebrate={(streak) => setCelebrationStreak(streak)} // 3. Pass the trigger
+                isFirst={index === 0}
+                isLast={index === rituals.length - 1}
+                onMoveUp={() => handleMove(index, -1)}
+                onMoveDown={() => handleMove(index, 1)}
+              />
+            </div>
           ))
         ) }
 
@@ -183,18 +298,19 @@ import { isDateRequired, isCompletedToday } from "../utils/streak";
           onClick={() => { setOpen(true); setSelectedRitual(null); }}
           className="floating-add-btn"
           style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          fontSize: "28px",
-          background: "#ff6b00",
-          color: "white",
-          border: "none",
-          cursor: "pointer"
-        }}
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            width: "60px",
+            height: "60px",
+            borderRadius: "50%",
+            fontSize: "28px",
+            background: "#ff6b00",
+            color: "white",
+            border: "none",
+            cursor: "pointer",
+            zIndex: 100
+          }}
         > + </button>
 
         {celebrationStreak && (

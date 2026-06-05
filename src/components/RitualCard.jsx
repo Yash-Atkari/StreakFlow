@@ -1,9 +1,19 @@
 import { supabase } from "../services/supabaseClient";
 import { isCompletedToday, calculateNewStreak, isDateRequired } from "../utils/streak";
-import { FiLock, FiTrash2, FiClock, FiEdit2 } from "react-icons/fi";
+import { FiLock, FiTrash2, FiClock, FiEdit2, FiMenu, FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { HiFire } from "react-icons/hi";
 
-export default function RitualCard({ ritual, refresh, onEdit, openModal, onCelebrate }) {
+export default function RitualCard({ 
+  ritual, 
+  refresh, 
+  onEdit, 
+  openModal, 
+  onCelebrate,
+  isFirst,
+  isLast,
+  onMoveUp,
+  onMoveDown
+}) {
 
   // 1. Calculate the dynamic status
   const isDone = isCompletedToday(ritual.last_completed_date);
@@ -18,7 +28,8 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
   const isRequiredToday = isDateRequired(ritual, new Date());
   const canComplete = isWithinWindow() && isRequiredToday;
 
-  const handleComplete = async () => {
+  const handleComplete = async (e) => {
+    e.stopPropagation();
     if (!canComplete) return;
 
     // 2. Logic for Undo (if already done today)
@@ -78,7 +89,12 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
       }}
     >
       {/* LEFT */}
-      <div className="d-flex align-items-start gap-3">
+      <div className="d-flex align-items-start gap-2">
+        {/* Drag Handle Icon */}
+        <div className="drag-handle" style={{ marginTop: "4px", paddingRight: "4px" }}>
+          <FiMenu size={16} />
+        </div>
+
         <div
           onClick={handleComplete}
           style={{
@@ -147,18 +163,46 @@ export default function RitualCard({ ritual, refresh, onEdit, openModal, onCeleb
 
       {/* RIGHT */}
       <div className="d-flex align-items-center gap-3">
+        {/* Chevron Up */}
+        <FiChevronUp
+          size={18}
+          className={`icon-btn ${isFirst ? 'disabled' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isFirst) onMoveUp();
+          }}
+          title="Move Up"
+        />
+        {/* Chevron Down */}
+        <FiChevronDown
+          size={18}
+          className={`icon-btn ${isLast ? 'disabled' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isLast) onMoveDown();
+          }}
+          title="Move Down"
+        />
+        {/* Edit Button */}
         <FiEdit2
           size={18}
           className="icon-btn"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             onEdit(ritual);
             openModal();
           }}
+          title="Edit"
         />
+        {/* Delete Button */}
         <FiTrash2
           size={18}
           className="icon-btn"
-          onClick={handleDelete}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
+          title="Delete"
         />
       </div>
     </div>
