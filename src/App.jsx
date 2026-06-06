@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "./services/supabaseClient";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   useEffect(() => {
     // Get current user
@@ -14,8 +16,11 @@ export default function App() {
 
     // Listen to auth changes
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_, session) => {
+      (event, session) => {
         setUser(session?.user || null);
+        if (event === "PASSWORD_RECOVERY") {
+          setIsRecoveryMode(true);
+        }
       }
     );
 
@@ -24,7 +29,13 @@ export default function App() {
 
   return (
     <div className="bg-black min-h-screen text-white">
-      {user ? <Home user={user} /> : <Login />}
+      {isRecoveryMode ? (
+        <ResetPassword onComplete={() => setIsRecoveryMode(false)} />
+      ) : user ? (
+        <Home user={user} />
+      ) : (
+        <Login />
+      )}
     </div>
   );
 }

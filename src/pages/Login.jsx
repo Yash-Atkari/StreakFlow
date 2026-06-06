@@ -7,6 +7,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({}); // Track validation and auth errors
   const [loading, setLoading] = useState(false); // Add a loading state for UX
+  const [view, setView] = useState("login"); // 'login' | 'forgot-password'
 
   const validate = () => {
     const newErrors = {};
@@ -70,6 +71,30 @@ export default function Login() {
     setLoading(false);
   };
 
+  const handleResetRequest = async () => {
+    if (!email) {
+      setErrors({ email: "Email is required." });
+      return;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      setErrors({ email: "Please enter a valid email address." });
+      return;
+    }
+
+    setLoading(true);
+    setErrors({});
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+
+    if (error) {
+      setErrors({ auth: error.message });
+    } else {
+      setErrors({ success: "Password reset link has been sent to your email!" });
+    }
+    setLoading(false);
+  };
+
   return (
     <div
       style={{
@@ -99,7 +124,7 @@ export default function Login() {
         </div>
 
         <h5 className="mb-4 text-center" style={{ color: "#eee" }}>
-          Welcome Back
+          {view === "login" ? "Welcome Back" : "Reset Password"}
         </h5>
 
         {/* General Auth/Success Message */}
@@ -120,37 +145,82 @@ export default function Login() {
           {errors.email && <div style={errorTextStyle}>{errors.email}</div>}
         </div>
 
-        {/* Password */}
-        <div className="mb-4">
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              if (errors.password) setErrors({ ...errors, password: null });
-            }}
-            style={{ ...inputStyle, borderColor: errors.password ? "#ff4d4d" : "#222" }}
-          />
-          {errors.password && <div style={errorTextStyle}>{errors.password}</div>}
-        </div>
+        {view === "login" ? (
+          <>
+            {/* Password */}
+            <div className="mb-4">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({ ...errors, password: null });
+                }}
+                style={{ ...inputStyle, borderColor: errors.password ? "#ff4d4d" : "#222" }}
+              />
+              {errors.password && <div style={errorTextStyle}>{errors.password}</div>}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+                <span
+                  onClick={() => {
+                    setView("forgot-password");
+                    setErrors({});
+                  }}
+                  style={{
+                    color: "#888",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                    transition: "color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.color = "#ff6b00")}
+                  onMouseLeave={(e) => (e.target.style.color = "#888")}
+                >
+                  Forgot Password?
+                </span>
+              </div>
+            </div>
 
-        {/* Buttons */}
-        <button 
-          onClick={handleLogin} 
-          style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}
-          disabled={loading}
-        >
-          {loading ? "Processing..." : "Login"}
-        </button>
+            {/* Buttons */}
+            <button 
+              onClick={handleLogin} 
+              style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Login"}
+            </button>
 
-        <button 
-          onClick={handleSignup} 
-          style={secondaryBtn}
-          disabled={loading}
-        >
-          Create New Account
-        </button>
+            <button 
+              onClick={handleSignup} 
+              style={secondaryBtn}
+              disabled={loading}
+            >
+              Create New Account
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Reset Request Button */}
+            <button 
+              onClick={handleResetRequest} 
+              style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Send Reset Link"}
+            </button>
+
+            {/* Back to Login Button */}
+            <button 
+              onClick={() => {
+                setView("login");
+                setErrors({});
+              }} 
+              style={secondaryBtn}
+              disabled={loading}
+            >
+              Back to Login
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
