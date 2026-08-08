@@ -11,7 +11,7 @@ const messages = [
 ];
 
 export default function StreakCelebration({ streak, onClose }) {
-  const [msg] = useState(messages[Math.floor(Math.random() * messages.length)]);
+  const [msg] = useState(() => messages[Math.floor(Math.random() * messages.length)]);
 
   useEffect(() => {
     const timer = setTimeout(onClose, 3000); // Auto-close after 3 seconds

@@ -15,7 +15,6 @@ const firebaseApp = initializeApp({
 });
 
 // 3. Initialize Supabase Admin Client
-// Supabase automatically provides the URL and SERVICE_ROLE_KEY in the background!
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -23,34 +22,52 @@ const supabase = createClient(
 
 Deno.serve(async (req) => {
   try {
-    // 4. Fetch all active device tokens from your database
-    const { data: tokens, error } = await supabase.from('fcm_tokens').select('token');
+    // 4. Fetch targeted active reminders from database via RPC
+    const { data: reminders, error } = await supabase.rpc('get_active_reminders');
 
     if (error) throw error;
     
-    // If no tokens exist, exit gracefully
-    if (!tokens || tokens.length === 0) {
-      console.log("No tokens found. Total notifications sent: 0");
-      return new Response(JSON.stringify({ sent: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
+    // If no reminders are due now, exit gracefully
+    if (!reminders || reminders.length === 0) {
+      console.log("No targeted reminders found. Total notifications sent: 0");
+      return new Response(
+        JSON.stringify({ sent: 0 }), 
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // 5. Prepare the notification payload
-    const registrationTokens = tokens.map(t => t.token);
-    const message = {
+    // 5. Prepare custom notification message payloads
+    const messages = reminders.map((r: any) => ({
       notification: {
-        title: '🔥 StreakFlow Reminder',
-        body: 'Time to complete your daily habits and keep your streak alive!',
+        title: r.title,
+        body: r.body,
       },
-      tokens: registrationTokens,
-    };
+      token: r.token,
+    }));
 
-    // 6. Send the push notifications via Firebase
-    const response = await getMessaging(firebaseApp).sendEachForMulticast(message);
+    // 6. Send the custom notifications in batch via Firebase
+    const response = await getMessaging(firebaseApp).sendEach(messages);
     
-    console.log(`Successfully sent ${response.successCount} messages.`);
+    console.log(`Successfully sent ${response.successCount} custom messages.`);
 
-    // 7. CLEANUP: Force Firebase to close its background connections so Deno can sleep!
-    // await firebaseApp.delete();
+    // 7. Track successful dispatches to update last_notified_at cache in database
+    const sentRitualIds: string[] = [];
+    response.responses.forEach((res: any, index: number) => {
+      if (res.success) {
+        sentRitualIds.push(reminders[index].ritual_id);
+      } else {
+        console.warn(`Failed to send to token: ${reminders[index].token}. Error:`, res.error?.message);
+      }
+    });
+
+    if (sentRitualIds.length > 0) {
+      const { error: markError } = await supabase.rpc('mark_rituals_notified', {
+        ritual_ids_param: sentRitualIds
+      });
+      if (markError) {
+        console.error("Error marking rituals notified:", markError.message);
+      }
+    }
 
     return new Response(
       JSON.stringify({ sent: response.successCount, failures: response.failureCount }), 

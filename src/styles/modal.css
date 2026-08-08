@@ -6,19 +6,22 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  z-index: 1000;
 }
 
 /* Bottom sheet */
 .modal-card {
-  background: #000;
+  background: #0d0d12;
   width: 100%;
   max-width: 500px;
-  border-radius: 20px 20px 0 0;
-  padding: 20px;
-  border: grey;
+  border-radius: 24px 24px 0 0;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  max-height: 85vh;
+  overflow-y: auto;
 
   transform: translateY(100%);
-  animation: slideUp 0.3s ease forwards;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Animation */
@@ -68,7 +71,7 @@
 }
 
 .pill.active {
-  background: #ff6b00;
+  background: var(--theme-primary, #ff6b00);
   color: white;
 }
 
@@ -90,7 +93,7 @@
 }
 
 .toggle.active {
-  background: #ff6b00;
+  background: var(--theme-primary, #ff6b00);
 }
 
 .toggle-circle {
@@ -130,7 +133,7 @@
 /* Button */
 .primary-btn {
   width: 100%;
-  background: #ff6b00;
+  background: var(--theme-primary, #ff6b00);
   border: none;
   border-radius: 14px;
   padding: 14px;

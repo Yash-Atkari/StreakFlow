@@ -1,0 +1,13 @@
+{
+  "appId": "com.streakflow.app",
+  "appName": "StreakFlow",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}

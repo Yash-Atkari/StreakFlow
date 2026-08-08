@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
+import { analytics } from "../services/mobile/analytics";
 import "../styles/modal.css";
 
 export default function AddRitualModal({ close, refresh, ritual }) {
   const [closing, setClosing] = useState(false);
   const [errors, setErrors] = useState({}); // Track validation errors
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
   const [form, setForm] = useState({
     title: ritual?.title || "",
     description: ritual?.description || "",
@@ -13,6 +21,9 @@ export default function AddRitualModal({ close, refresh, ritual }) {
     submit_window: ritual?.submit_window || false,
     start_time: ritual?.start_time || "06:00",
     end_time: ritual?.end_time || "08:00",
+    timezone: ritual?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    reward_title: ritual?.reward_title || "",
+    reward_target_streak: ritual?.reward_target_streak || "",
   });
 
   const handleClose = () => {
@@ -55,6 +66,12 @@ export default function AddRitualModal({ close, refresh, ritual }) {
     if (form.repeat_type === "custom" && form.custom_days.length === 0) {
       newErrors.custom_days = "Please select at least one day for custom recurrence.";
     }
+    if (form.reward_title.trim()) {
+      const target = parseInt(form.reward_target_streak, 10);
+      if (isNaN(target) || target <= 0) {
+        newErrors.reward_target_streak = "Please enter a valid number of days (> 0) to solidify the commitment.";
+      }
+    }
     return newErrors;
   };
 
@@ -74,6 +91,8 @@ export default function AddRitualModal({ close, refresh, ritual }) {
     const payload = {
       ...form,
       user_id: user.id,
+      reward_title: form.reward_title.trim() || null,
+      reward_target_streak: form.reward_title.trim() ? parseInt(form.reward_target_streak, 10) : null,
     };
 
     if (!form.submit_window) {
@@ -94,6 +113,17 @@ export default function AddRitualModal({ close, refresh, ritual }) {
       console.error(error);
       setErrors({ submit: "Something went wrong on our end. Please try again." });
       return;
+    }
+
+    // Log Analytics events on success
+    if (!ritual) {
+      analytics.logHabitCreated(form.title, form.repeat_type, form.reward_target_streak || null);
+      
+      const onboardingKey = `streakflow_onboarding_done_${user.id}`;
+      if (!localStorage.getItem(onboardingKey)) {
+        analytics.logOnboardingCompleted();
+        localStorage.setItem(onboardingKey, "true");
+      }
     }
 
     refresh();
@@ -173,7 +203,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
         {/* Submit Window */}
         <div className="label mt-3">SUBMIT WINDOW</div>
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <span className="text-muted small">Restrict check-ins to a specific time</span>
+          <span className="small" style={{ color: "#a1a1aa" }}>Restrict check-ins to a specific time</span>
           <div
             className={`toggle ${form.submit_window ? "active" : ""}`}
             onClick={() => setForm({ ...form, submit_window: !form.submit_window })}
@@ -203,6 +233,37 @@ export default function AddRitualModal({ close, refresh, ritual }) {
                 onChange={(e) => setForm({ ...form, end_time: e.target.value })}
               />
             </div>
+          </div>
+        )}
+
+        {/* Commitment */}
+        <div className="label mt-3">COMMITMENT</div>
+        <div className="row g-2 mb-3">
+          <div className="col-8">
+            <input
+              className="input mb-0"
+              placeholder="e.g., To feel healthy and energized"
+              value={form.reward_title || ""}
+              onChange={(e) => setForm({ ...form, reward_title: e.target.value })}
+            />
+          </div>
+          <div className="col-4">
+            <input
+              type="number"
+              min="1"
+              className={`input mb-0 ${errors.reward_target_streak ? "input-error" : ""}`}
+              placeholder="21"
+              value={form.reward_target_streak || ""}
+              onChange={(e) => {
+                setForm({ ...form, reward_target_streak: e.target.value });
+                if (errors.reward_target_streak) setErrors({ ...errors, reward_target_streak: null });
+              }}
+            />
+          </div>
+        </div>
+        {errors.reward_target_streak && (
+          <div className="error-message mt-0 mb-3" style={{ fontSize: "11px" }}>
+            {errors.reward_target_streak}
           </div>
         )}
 

@@ -23,7 +23,7 @@ export default function CircularProgress({ value }) {
 
         {/* Progress */}
         <circle
-          stroke="#ff6b00"
+          stroke="var(--theme-primary, #ff6b00)"
           fill="transparent"
           strokeWidth={stroke}
           strokeDasharray={`${circumference} ${circumference}`}

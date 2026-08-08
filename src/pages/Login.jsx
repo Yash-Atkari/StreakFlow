@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { supabase } from "../services/supabaseClient";
 import { HiFire } from "react-icons/hi";
+import { playTap, playErrorPluck } from "../utils/audio";
+
+import { analytics } from "../services/mobile/analytics";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,8 +30,10 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
+    playTap();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
+      playErrorPluck();
       setErrors(validationErrors);
       return;
     }
@@ -36,20 +41,25 @@ export default function Login() {
     setLoading(true);
     setErrors({});
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      playErrorPluck();
       setErrors({ auth: error.message });
+    } else if (data?.user) {
+      analytics.logLogin(data.user.id, "email");
     }
     setLoading(false);
   };
 
   const handleSignup = async () => {
+    playTap();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
+      playErrorPluck();
       setErrors(validationErrors);
       return;
     }
@@ -57,14 +67,18 @@ export default function Login() {
     setLoading(true);
     setErrors({});
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (error) {
+      playErrorPluck();
       setErrors({ auth: error.message });
     } else {
+      if (data?.user) {
+        analytics.logSignUp(data.user.id, "email");
+      }
       // Professional feedback for sign up
       setErrors({ success: "Check your email for the confirmation link!" });
     }
@@ -72,10 +86,13 @@ export default function Login() {
   };
 
   const handleResetRequest = async () => {
+    playTap();
     if (!email) {
+      playErrorPluck();
       setErrors({ email: "Email is required." });
       return;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
+      playErrorPluck();
       setErrors({ email: "Please enter a valid email address." });
       return;
     }
@@ -88,6 +105,7 @@ export default function Login() {
     });
 
     if (error) {
+      playErrorPluck();
       setErrors({ auth: error.message });
     } else {
       setErrors({ success: "Password reset link has been sent to your email!" });
@@ -97,9 +115,9 @@ export default function Login() {
 
   return (
     <div
+      className="theme-wrapper theme-default"
       style={{
         minHeight: "100vh",
-        background: "#000",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -108,24 +126,33 @@ export default function Login() {
     >
       <div
         style={{
-          background: "#1a1a1a",
-          padding: "30px",
-          borderRadius: "20px",
+          background: "rgba(20, 20, 28, 0.65)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          padding: "36px 32px",
+          borderRadius: "24px",
           width: "100%",
-          maxWidth: "350px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+          maxWidth: "370px",
+          border: "1px solid rgba(255, 108, 0, 0.15)",
+          transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
         }}
       >
         {/* Logo */}
-        <div className="text-center mb-3">
-          <h3 style={{ fontWeight: "bold", color: "white" }}>
-            <HiFire color="#ff6b00" /> StreakFlow
-          </h3>
+        <div className="text-center mb-4">
+          <span className="d-inline-flex align-items-center gap-2" style={{ fontSize: "28px" }}>
+            <HiFire color="#ff6b00" size={35} />
+            <b>
+              <span style={{ color: "white" }}>Streak</span>
+              <span style={{ color: "#ff6b00" }}>Flow</span>
+            </b>
+          </span>
         </div>
 
-        <h5 className="mb-4 text-center" style={{ color: "#eee" }}>
-          {view === "login" ? "Welcome Back" : "Reset Password"}
-        </h5>
+        {view !== "login" && (
+          <h5 className="mb-4 text-center" style={{ color: "#eee" }}>
+            Reset Password
+          </h5>
+        )}
 
         {/* General Auth/Success Message */}
         {errors.auth && <div style={errorBannerStyle}>{errors.auth}</div>}
@@ -183,7 +210,7 @@ export default function Login() {
             {/* Buttons */}
             <button 
               onClick={handleLogin} 
-              style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}
+              className="primary-btn mb-2"
               disabled={loading}
             >
               {loading ? "Processing..." : "Login"}
@@ -191,7 +218,7 @@ export default function Login() {
 
             <button 
               onClick={handleSignup} 
-              style={secondaryBtn}
+              className="secondary-btn"
               disabled={loading}
             >
               Create New Account
@@ -202,7 +229,7 @@ export default function Login() {
             {/* Reset Request Button */}
             <button 
               onClick={handleResetRequest} 
-              style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}
+              className="primary-btn mb-2"
               disabled={loading}
             >
               {loading ? "Processing..." : "Send Reset Link"}
@@ -214,7 +241,7 @@ export default function Login() {
                 setView("login");
                 setErrors({});
               }} 
-              style={secondaryBtn}
+              className="secondary-btn"
               disabled={loading}
             >
               Back to Login
@@ -229,13 +256,13 @@ export default function Login() {
 // Internal Styles (matching your design)
 const inputStyle = {
   width: "100%",
-  background: "#111",
-  border: "1px solid #222",
-  borderRadius: "12px",
-  padding: "12px",
+  background: "rgba(255, 255, 255, 0.03)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  borderRadius: "14px",
+  padding: "14px",
   color: "white",
   outline: "none",
-  transition: "border-color 0.2s",
+  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
 };
 
 const errorTextStyle = {
@@ -246,44 +273,24 @@ const errorTextStyle = {
 };
 
 const errorBannerStyle = {
-  background: "rgba(255, 77, 77, 0.1)",
+  background: "rgba(255, 77, 77, 0.08)",
   color: "#ff4d4d",
-  padding: "10px",
-  borderRadius: "10px",
+  padding: "12px",
+  borderRadius: "12px",
   fontSize: "0.85rem",
-  marginBottom: "15px",
+  marginBottom: "18px",
   textAlign: "center",
-  border: "1px solid rgba(255, 77, 77, 0.2)"
+  border: "1px solid rgba(255, 77, 77, 0.2)",
 };
 
 const successBannerStyle = {
-  background: "rgba(75, 181, 67, 0.1)",
+  background: "rgba(75, 181, 67, 0.08)",
   color: "#4bb543",
-  padding: "10px",
-  borderRadius: "10px",
+  padding: "12px",
+  borderRadius: "12px",
   fontSize: "0.85rem",
-  marginBottom: "15px",
+  marginBottom: "18px",
   textAlign: "center",
-  border: "1px solid rgba(75, 181, 67, 0.2)"
+  border: "1px solid rgba(75, 181, 67, 0.2)",
 };
-
-const primaryBtn = {
-  width: "100%",
-  background: "#ff6b00",
-  border: "none",
-  borderRadius: "12px",
-  padding: "12px",
-  color: "white",
-  marginBottom: "10px",
-  cursor: "pointer",
-};
-
-const secondaryBtn = {
-  width: "100%",
-  background: "transparent",
-  border: "1px solid #333",
-  borderRadius: "12px",
-  padding: "12px",
-  color: "#999",
-  cursor: "pointer",
-};
+

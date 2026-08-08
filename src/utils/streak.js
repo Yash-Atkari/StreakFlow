@@ -41,20 +41,54 @@ export const isDateRequired = (ritual, date) => {
 };
 
 /**
- * Calculates the new streak when a ritual is completed.
- * It strictly adds 1 because missed days are already zeroed out by `resetMissedStreaks` in Home.
+ * Dynamically calculates a ritual's current streak from its habit logs and repeat rules.
  */
-export const calculateNewStreak = (ritual) => {
-  const { current_streak, last_completed_date } = ritual;
+export const calculateStreak = (ritual) => {
+  if (!ritual) return 0;
   
-  const today = new Date().toDateString();
-  const lastDate = last_completed_date ? new Date(last_completed_date).toDateString() : null;
+  const logs = ritual.habit_logs || [];
+  if (logs.length === 0) return 0;
 
-  // 1. If already done today, keep the current streak
-  if (lastDate === today) {
-    return current_streak || 0;
+  // Create a set of completed date strings in local timezone
+  const completedDates = new Set(
+    logs.map(log => new Date(log.completed_at).toDateString())
+  );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const createdDate = new Date(ritual.created_at);
+  createdDate.setHours(0, 0, 0, 0);
+
+  let checkDate = new Date(today);
+  let streak = 0;
+
+  while (checkDate >= createdDate) {
+    const checkDateStr = checkDate.toDateString();
+    const isCompleted = completedDates.has(checkDateStr);
+
+    if (isCompleted) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      // If today is not completed yet, the streak is not broken yet, check yesterday
+      if (checkDateStr === today.toDateString()) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        // Check if checkDate was a required day
+        const isRequired = isDateRequired(ritual, checkDate);
+        if (isRequired) {
+          // Missed a required day! Streak is broken.
+          break;
+        } else {
+          // Not required, skip to previous day
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+      }
+    }
   }
 
-  // 2. Increment streak by 1
-  return (current_streak || 0) + 1;
+  return streak;
 };
+
+

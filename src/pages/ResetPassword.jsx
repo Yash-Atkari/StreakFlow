@@ -55,7 +55,6 @@ export default function ResetPassword({ onComplete }) {
           borderRadius: "20px",
           width: "100%",
           maxWidth: "350px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
         }}
       >
         {/* Logo */}
@@ -76,7 +75,7 @@ export default function ResetPassword({ onComplete }) {
             <div style={successBannerStyle}>{errors.success}</div>
             <button 
               onClick={onComplete} 
-              style={primaryBtn}
+              className="primary-btn"
             >
               Go to Dashboard
             </button>
@@ -118,7 +117,7 @@ export default function ResetPassword({ onComplete }) {
             {/* Buttons */}
             <button 
               onClick={handleResetPassword} 
-              style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}
+              className="primary-btn"
               disabled={loading}
             >
               {loading ? "Processing..." : "Update Password"}
@@ -171,13 +170,4 @@ const successBannerStyle = {
   border: "1px solid rgba(75, 181, 67, 0.2)"
 };
 
-const primaryBtn = {
-  width: "100%",
-  background: "#ff6b00",
-  border: "none",
-  borderRadius: "12px",
-  padding: "12px",
-  color: "white",
-  marginBottom: "10px",
-  cursor: "pointer",
-};
+

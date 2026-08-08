@@ -1,7 +1,24 @@
+@import "./styles/premium.css";
+
 html, body, #root {
   height: 100%;
-  background: #000;
-  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  background: #050508;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #f3f4f6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Disable text selection globally to feel like a native app */
+*, *::before, *::after {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable text selection for input elements to keep forms fully functional */
+input, textarea, [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Logout button */
@@ -89,36 +106,150 @@ html, body, #root {
 }
 
 .drag-handle {
-  cursor: grab;
+  cursor: pointer;
   color: #444;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.drag-handle:hover {
-  color: #ff6b00;
-  transform: scale(1.1);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
 }
 
 .icon-btn {
   color: #888;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
 }
 
 .icon-btn:hover {
-  color: #ff6b00;
-  transform: scale(1.15);
+  color: #fff;
 }
 
 .icon-btn.disabled {
   color: #333 !important;
   cursor: not-allowed;
-  transform: none !important;
 }
+
+/* Premium bounce and hover effects */
+.animate-bounce-on-hover:hover {
+  opacity: 0.95;
+}
+
+.animate-bounce-on-hover:active {
+  opacity: 0.85;
+}
+
+/* Card hover animation */
+.ritual-card-premium {
+  transition: border-color 0.3s ease !important;
+}
+
+.ritual-card-premium:hover {
+  border-color: rgba(var(--theme-primary-rgb), 0.35) !important;
+}
+
+/* Custom scrollbar to feel premium */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.floating-add-btn:hover {
+  box-shadow: none !important;
+}
+
+/* --- Global Headings and Subheadings Styling --- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+/* Subheadings styling */
+.subheading {
+  font-size: 11px;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: block;
+}
+
+/* Unified Buttons */
+.primary-btn {
+  width: 100%;
+  background: var(--theme-primary, #ff6b00) !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.primary-btn:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+}
+
+.primary-btn:active {
+  transform: translateY(0) !important;
+}
+
+.primary-btn:disabled, .primary-btn.disabled {
+  background: #333333 !important;
+  color: #888888 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.secondary-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  color: #a1a1aa !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.secondary-btn:active {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.pill.active {
+  background: var(--theme-primary, #ff6b00) !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
