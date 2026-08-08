@@ -47,6 +47,10 @@ export default function Home({ user }) {
   // Active tab state
   const [activeTab, setActiveTab] = useState("tracker");
 
+  // PWA Install prompt states
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
   // Consume Premium Context
   const { isPremium, shieldsCount, buyShields } = usePremium();
 
@@ -149,6 +153,36 @@ export default function Home({ user }) {
       setupNotifications(user.id);
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    window.addEventListener("appinstalled", () => {
+      setDeferredPrompt(null);
+      setShowInstallBanner(false);
+      console.log("PWA was installed");
+    });
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    playTap();
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User choice: ${outcome}`);
+    setDeferredPrompt(null);
+    setShowInstallBanner(false);
+  };
 
   // Product branding themes and terminology mapping
   const getHabitTerm = () => {
@@ -323,6 +357,45 @@ export default function Home({ user }) {
         {/* Render Active Tab Content */}
         {activeTab === "tracker" && (
           <>
+            {/* PWA Install Banner */}
+            {showInstallBanner && (
+              <div 
+                className="d-flex justify-content-between align-items-center p-3 mb-4 rounded-4" 
+                style={{ 
+                  background: "rgba(255, 107, 0, 0.08)",
+                  border: "1px solid rgba(255, 107, 0, 0.2)",
+                  backdropFilter: "blur(10px)",
+                  animation: "fadeIn 0.3s ease-in-out"
+                }}
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <div className="p-2 rounded-circle" style={{ background: "rgba(255, 107, 0, 0.15)" }}>
+                    <HiFire size={24} color="var(--theme-primary, #ff6b00)" />
+                  </div>
+                  <div>
+                    <div className="fw-bold text-white" style={{ fontSize: "14px" }}>Install StreakFlow App</div>
+                    <div className="text-secondary" style={{ fontSize: "11px" }}>Add to home screen for faster, native access!</div>
+                  </div>
+                </div>
+                <div className="d-flex gap-2">
+                  <button 
+                    className="btn btn-sm btn-outline-secondary border-0 text-secondary" 
+                    style={{ fontSize: "12px" }}
+                    onClick={() => setShowInstallBanner(false)}
+                  >
+                    Later
+                  </button>
+                  <button 
+                    className="primary-btn btn-sm py-1 px-3" 
+                    style={{ fontSize: "12px", width: "auto" }}
+                    onClick={handleInstallClick}
+                  >
+                    Install
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Dashboard Stats */}
             <div 
               className="p-4 mb-4" 
