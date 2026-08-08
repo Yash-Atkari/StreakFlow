@@ -360,7 +360,7 @@ export default function Home({ user }) {
             {/* PWA Install Banner */}
             {showInstallBanner && (
               <div 
-                className="d-flex justify-content-between align-items-center p-3 mb-4 rounded-4" 
+                className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center p-3 mb-4 rounded-4 gap-3" 
                 style={{ 
                   background: "rgba(255, 107, 0, 0.08)",
                   border: "1px solid rgba(255, 107, 0, 0.2)",
@@ -369,25 +369,48 @@ export default function Home({ user }) {
                 }}
               >
                 <div className="d-flex align-items-center gap-3">
-                  <div className="p-2 rounded-circle" style={{ background: "rgba(255, 107, 0, 0.15)" }}>
+                  <div className="p-2 rounded-circle" style={{ background: "rgba(255, 107, 0, 0.15)", flexShrink: 0 }}>
                     <HiFire size={24} color="var(--theme-primary, #ff6b00)" />
                   </div>
                   <div>
-                    <div className="fw-bold text-white" style={{ fontSize: "14px" }}>Install StreakFlow App</div>
-                    <div className="text-secondary" style={{ fontSize: "11px" }}>Add to home screen for faster, native access!</div>
+                    <div className="fw-bold text-white" style={{ fontSize: "14px", lineHeight: "1.2" }}>Install StreakFlow App</div>
+                    <div className="text-secondary" style={{ fontSize: "11px", marginTop: "2px", lineHeight: "1.3" }}>Add to home screen for faster, native access!</div>
                   </div>
                 </div>
-                <div className="d-flex gap-2">
+                <div className="d-flex align-items-center gap-2 ms-auto ms-sm-0">
                   <button 
-                    className="btn btn-sm btn-outline-secondary border-0 text-secondary" 
-                    style={{ fontSize: "12px" }}
+                    style={{ 
+                      fontSize: "12px", 
+                      color: "#9ca3af", 
+                      background: "transparent", 
+                      border: "none", 
+                      outline: "none", 
+                      padding: "6px 12px",
+                      cursor: "pointer",
+                      transition: "color 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = "#ffffff"}
+                    onMouseLeave={(e) => e.target.style.color = "#9ca3af"}
                     onClick={() => setShowInstallBanner(false)}
                   >
                     Later
                   </button>
                   <button 
-                    className="primary-btn btn-sm py-1 px-3" 
-                    style={{ fontSize: "12px", width: "auto" }}
+                    style={{ 
+                      fontSize: "12px", 
+                      fontWeight: "700",
+                      color: "#000000", 
+                      background: "var(--theme-primary, #ff6b00)", 
+                      border: "none", 
+                      borderRadius: "10px", 
+                      padding: "6px 16px",
+                      cursor: "pointer",
+                      width: "auto",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: "30px"
+                    }}
                     onClick={handleInstallClick}
                   >
                     Install
