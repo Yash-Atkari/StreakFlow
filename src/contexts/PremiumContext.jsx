@@ -18,13 +18,13 @@ const PremiumContext = createContext({
 
 export function PremiumProvider({ children, user }) {
   const { alert } = useDialog();
-  const [isPremium, setIsPremium] = useState(false);
-  const [shieldsCount, setShieldsCount] = useState(0);
+  const [isPremium, setIsPremium] = useState(true); // Default to true for launch phase
+  const [shieldsCount, setShieldsCount] = useState(3); // Start with at least 3 shields
   const [loading, setLoading] = useState(true);
 
   const fetchSubscription = async () => {
     if (!user) {
-      setIsPremium(false);
+      setIsPremium(true);
       setShieldsCount(0);
       setLoading(false);
       return;
@@ -40,25 +40,22 @@ export function PremiumProvider({ children, user }) {
 
       if (error) throw error;
 
-      let premiumStatus = false;
-      let shields = 0;
+      let premiumStatus = true; // Force premium status to true
+      let shields = 3; // Default starting shields to 3
 
       if (data) {
-        premiumStatus = data.is_premium;
         shields = data.streak_shields;
       } else {
         // Fallback checks
-        const localPremium = localStorage.getItem(`streakflow_premium_fallback_${user.id}`) === "true";
-        const localShields = parseInt(localStorage.getItem(`streakflow_shields_fallback_${user.id}`) || "0", 10);
+        const localShields = parseInt(localStorage.getItem(`streakflow_shields_fallback_${user.id}`) || "3", 10);
 
         const { data: newRow, error: insertError } = await supabase
           .from("user_subscriptions")
-          .insert([{ user_id: user.id, is_premium: localPremium, streak_shields: localShields }])
+          .insert([{ user_id: user.id, is_premium: true, streak_shields: localShields }])
           .select()
           .single();
 
         if (!insertError && newRow) {
-          premiumStatus = newRow.is_premium;
           shields = newRow.streak_shields;
         }
       }
@@ -67,7 +64,6 @@ export function PremiumProvider({ children, user }) {
       if (Capacitor.isNativePlatform() && revenueCatService.isConfigured()) {
         const rcPremium = await revenueCatService.checkPremiumStatus();
         if (rcPremium) {
-          premiumStatus = true;
           // Sync back to Supabase if it wasn't marked premium
           if (data && !data.is_premium) {
             await supabase
@@ -79,14 +75,13 @@ export function PremiumProvider({ children, user }) {
         }
       }
 
-      setIsPremium(premiumStatus);
+      setIsPremium(true);
       setShieldsCount(shields);
 
     } catch (err) {
       console.warn("DB subscription load warning, falling back to local metadata/cache:", err);
-      const localPremium = localStorage.getItem(`streakflow_premium_fallback_${user.id}`) === "true";
-      const localShields = parseInt(localStorage.getItem(`streakflow_shields_fallback_${user.id}`) || "0", 10);
-      setIsPremium(localPremium);
+      const localShields = parseInt(localStorage.getItem(`streakflow_shields_fallback_${user.id}`) || "3", 10);
+      setIsPremium(true);
       setShieldsCount(localShields);
     } finally {
       setLoading(false);
