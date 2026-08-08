@@ -27,3 +27,4 @@ streakflow-1e44b-firebase-adminsdk-fbsvc-591ef1678b.json
 !package.json
 !package-lock.json
 .env
+android/app/google-services.json
