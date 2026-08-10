@@ -25,10 +25,19 @@ export const setupNotifications = async (userId) => {
       return;
     }
 
-    // 2. Get FCM Token using your new VAPID key
-    const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
-    });
+    // 2. Get FCM Token using your VAPID key and active Service Worker registration
+    let token;
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      token = await getToken(messaging, {
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: registration
+      });
+    } else {
+      token = await getToken(messaging, {
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+      });
+    }
 
     if (token) {
       // 3. Save Token to Supabase

@@ -140,6 +140,23 @@ export default function Home({ user }) {
       }));
 
       setRituals(enriched);
+
+      // Auto-sync client timezone for rituals in the database
+      const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const ritualsToUpdate = fetched.filter(r => r.timezone !== localTimezone);
+      if (ritualsToUpdate.length > 0) {
+        Promise.all(
+          ritualsToUpdate.map((r) =>
+            supabase.from("rituals").update({ timezone: localTimezone }).eq("id", r.id)
+          )
+        )
+          .then(() => {
+            console.log(`Auto-synced local timezone (${localTimezone}) to ${ritualsToUpdate.length} rituals.`);
+          })
+          .catch((e) => {
+            console.error("Failed to auto-sync ritual timezones:", e);
+          });
+      }
     }
     setLoading(false);
   }, [user]);
