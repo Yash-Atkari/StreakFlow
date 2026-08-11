@@ -20,6 +20,10 @@ let isSettingUp = false;
 let hasSetup = false;
 
 export const setupNotifications = async (userId) => {
+  if (localStorage.getItem("nivora_notifications_enabled") === "false") {
+    console.log("FCM Web: Notifications are disabled by user preference.");
+    return;
+  }
   if (isSettingUp || hasSetup) return;
   isSettingUp = true;
   try {

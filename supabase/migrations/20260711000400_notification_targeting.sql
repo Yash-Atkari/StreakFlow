@@ -16,7 +16,7 @@ BEGIN
   SELECT 
     t.token,
     r.id AS ritual_id,
-    '🔥 StreakFlow Reminder'::text AS title,
+    '✨ Nivora Reminder'::text AS title,
     ('Don''t lose your streak! Time to complete your habit: ' || r.title)::text AS body
   FROM fcm_tokens t
   JOIN rituals r ON t.user_id = r.user_id

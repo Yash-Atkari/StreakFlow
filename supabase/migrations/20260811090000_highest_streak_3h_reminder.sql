@@ -56,7 +56,7 @@ BEGIN
   SELECT 
     t.token AS token,
     h.id AS ritual_id,
-    '🔥 StreakFlow Reminder'::text AS title,
+    '✨ Nivora Reminder'::text AS title,
     CASE 
       WHEN h.current_streak > 0 THEN
         ('Don''t lose your ' || h.current_streak || '-day streak! Time to complete your habit: "' || h.habit_title || '".')::text
@@ -69,6 +69,6 @@ BEGIN
     -- 3. Check if we haven't already sent a notification in the last 2 hours
     (h.last_notified_at IS NULL OR h.last_notified_at < v_now - interval '2 hours')
     -- 4. Check if it's currently daytime (9:00 AM to 9:00 PM local time) to prevent late-night disturbances
-    AND extract(hour from (v_now AT TIME ZONE coalesce(h.timezone, 'UTC')))::integer BETWEEN 9 AND 21;
+    AND extract(hour from (v_now AT TIME ZONE coalesce(h.timezone, 'UTC')))::integer BETWEEN 9 AND 23;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "./NivoraIcon";
 import "../styles/celebration.css";
 
 const messages = [
   "Unstoppable!",
   "Consistency King!",
-  "Keep Burning!",
+  "Keep Rising!",
   "You're on a roll!",
   "Level Up!"
 ];
@@ -21,7 +21,7 @@ export default function StreakCelebration({ streak, onClose }) {
   return (
     <div className="celebration-overlay">
       <div className="fire-container">
-        <HiFire className="giant-fire" />
+        <NivoraIcon className="giant-fire" />
         <div className="streak-badge">{streak}</div>
       </div>
       <h1 className="motivation-text">{msg}</h1>

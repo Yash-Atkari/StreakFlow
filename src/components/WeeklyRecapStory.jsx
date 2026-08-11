@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "./NivoraIcon";
 import { FiAward, FiSliders, FiShield } from "react-icons/fi";
 import { useDialog } from "../contexts/DialogContext";
 import { isDateRequired, isCompletedToday } from "../utils/streak";
@@ -240,7 +240,7 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
               <FiAward size={20} color="var(--theme-primary)" />
               <div>
                 <strong style={{ fontSize: "14px" }}>Daily Insights</strong>
-                <span className="text-secondary small d-block" style={{ fontSize: "10px" }}>StreakFlow Premium</span>
+                <span className="text-secondary small d-block" style={{ fontSize: "10px" }}>Nivora Premium</span>
               </div>
             </div>
             <button 
@@ -340,7 +340,7 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
               {recapData.bestStreak > 0 ? (
                 <div>
                   <div className="mb-3 d-inline-block position-relative">
-                    <HiFire size={120} color="var(--theme-primary, #ff6b00)" style={{ filter: "drop-shadow(0 0 20px var(--theme-primary))" }} />
+                    <NivoraIcon size={120} style={{ filter: "drop-shadow(0 0 20px var(--theme-primary))" }} />
                     <div style={{
                       position: "absolute",
                       top: "55%", left: "50%",
@@ -360,7 +360,7 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
               ) : (
                 <div>
                   <div className="mb-3">
-                    <HiFire size={90} color="#444" />
+                    <NivoraIcon size={90} color="#444" />
                   </div>
                   <h3 className="text-secondary mb-2">No Active Anchor</h3>
                   <p className="text-secondary small px-3">
@@ -436,8 +436,8 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
                     fontSize: "12px",
                     fontWeight: "bold",
                     color: "black"
-                  }}>S</div>
-                  <span className="fw-bold text-white" style={{ fontSize: "12px" }}>StreakFlow Daily Insights</span>
+                  }}>N</div>
+                  <span className="fw-bold text-white" style={{ fontSize: "12px" }}>Nivora Daily Insights</span>
                 </div>
               </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { isDateRequired } from "../utils/streak";
 import { FiAward, FiTrendingUp, FiCalendar, FiActivity } from "react-icons/fi";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "./NivoraIcon";
 
 export default function AnalyticsTab({ rituals, user }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -474,7 +474,7 @@ export default function AnalyticsTab({ rituals, user }) {
             }}
           >
             <div className="d-flex align-items-center gap-2 mb-3">
-              <HiFire color="var(--theme-primary, #ff6b00)" size={16} />
+              <NivoraIcon size={16} />
               <span className="subheading">
                 Habit Leaderboard
               </span>

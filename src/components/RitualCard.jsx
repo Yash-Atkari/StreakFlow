@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../services/supabaseClient";
 import { isCompletedToday, isDateRequired } from "../utils/streak";
 import { FiLock, FiTrash2, FiClock, FiEdit2, FiMenu, FiShield, FiAward, FiTarget, FiStar } from "react-icons/fi";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "./NivoraIcon";
 import { usePremium } from "../contexts/PremiumContext";
 import { useDialog } from "../contexts/DialogContext";
 import { playSuccessChime, playUndoSound, playTap, playShieldCharge } from "../utils/audio";
@@ -239,7 +239,7 @@ export default function RitualCard({
             {!canComplete ? (
               <FiLock size={12} color="#888" />
             ) : isDone ? ( 
-              <HiFire size={16} color="black" />
+              <NivoraIcon size={16} color="black" />
             ) : null}
           </div>
 
@@ -260,7 +260,7 @@ export default function RitualCard({
 
             <div className="d-flex align-items-center gap-2 mt-1 small text-secondary flex-wrap">
               <span className="d-flex align-items-center gap-1"> 
-                 <HiFire size={14} color={ritual.current_streak > 0 ? "var(--theme-primary, #ff6b00)" : "#444"} /> 
+                 <NivoraIcon size={14} color={ritual.current_streak > 0 ? undefined : "#444"} /> 
                  {ritual.current_streak || 0} 
               </span>
 

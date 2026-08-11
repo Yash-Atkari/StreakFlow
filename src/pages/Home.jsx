@@ -3,7 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import AddRitualModal from "../components/AddRitualModal";
 import RitualCard from "../components/RitualCard";
 import CircularProgress from "../components/CircularProgress";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "../components/NivoraIcon";
 import { 
   FiLogOut, 
   FiAlertCircle, 
@@ -12,7 +12,9 @@ import {
   FiShield, 
   FiZap,
   FiBarChart2,
-  FiPlus
+  FiPlus,
+  FiBell,
+  FiBellOff
 } from "react-icons/fi";
 
 import StreakCelebration from "../components/StreakCelebration";
@@ -28,7 +30,7 @@ import { useDialog } from "../contexts/DialogContext";
 import { playTap, playThemeSweep } from "../utils/audio";
 
 export default function Home({ user }) {
-  const { alert } = useDialog();
+  const { alert, confirm } = useDialog();
   const [rituals, setRituals] = useState([]);
   const [open, setOpen] = useState(false);
   const [selectedRitual, setSelectedRitual] = useState(null);
@@ -51,6 +53,11 @@ export default function Home({ user }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
+  // Notification toggle state
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    return localStorage.getItem("nivora_notifications_enabled") !== "false";
+  });
+
   // Consume Premium Context
   const { isPremium, shieldsCount, buyShields } = usePremium();
 
@@ -63,6 +70,37 @@ export default function Home({ user }) {
       setShowRecapStory(true);
     } else {
       setActiveTab(tab);
+    }
+  };
+
+  const handleLogout = async () => {
+    const accepted = await confirm("Are you sure you want to log out?", "Confirm Logout");
+    if (accepted) {
+      await supabase.auth.signOut();
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    const nextState = !notificationsEnabled;
+    setNotificationsEnabled(nextState);
+    localStorage.setItem("nivora_notifications_enabled", String(nextState));
+    
+    if (nextState) {
+      playTap();
+      await setupNotifications(user.id);
+      await alert("Notifications enabled! You will now receive daily reminders.", "Notifications On");
+    } else {
+      playTap();
+      try {
+        const { error } = await supabase
+          .from("fcm_tokens")
+          .delete()
+          .eq("user_id", user.id);
+        if (error) throw error;
+        await alert("Notifications disabled. You will no longer receive daily reminders.", "Notifications Off");
+      } catch (err) {
+        console.error("Failed to delete FCM token on disable:", err);
+      }
     }
   };
 
@@ -101,7 +139,7 @@ export default function Home({ user }) {
       let fetched = data || [];
       
       const userId = user.id;
-      const storedOrder = localStorage.getItem(`streakflow_order_${userId}`);
+      const storedOrder = localStorage.getItem(`nivora_order_${userId}`);
       if (storedOrder) {
         try {
           const orderIds = JSON.parse(storedOrder);
@@ -131,7 +169,7 @@ export default function Home({ user }) {
 
       if (userId && fetched.length > 0) {
         const currentOrderIds = fetched.map(r => r.id);
-        localStorage.setItem(`streakflow_order_${userId}`, JSON.stringify(currentOrderIds));
+        localStorage.setItem(`nivora_order_${userId}`, JSON.stringify(currentOrderIds));
       }
 
       const enriched = fetched.map(r => ({
@@ -166,10 +204,10 @@ export default function Home({ user }) {
   }, [fetchRituals]);
 
   useEffect(() => {
-    if (user) {
+    if (user && notificationsEnabled) {
       setupNotifications(user.id);
     }
-  }, [user]);
+  }, [user, notificationsEnabled]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -214,56 +252,15 @@ export default function Home({ user }) {
     }[activeTheme] || "rituals";
   };
 
-  const getTitleVibe = () => {
-    if (!isPremium) return "StreakFlow";
-    return {
-      default: "StreakFlow",
-      glowup: "GLOWUP FLOW",
-      zen: "ZEN FLOW",
-      gym: "GYM FLOW",
-      study: "STUDY FLOW",
-      healing: "HEALING FLOW"
-    }[activeTheme] || "StreakFlow";
-  };
-
-  const capitalizeWord = (word) => {
-    if (!word) return "";
-    const letterIndex = word.search(/[a-zA-Z]/);
-    if (letterIndex === -1) return word;
-    return word.slice(0, letterIndex) + 
-           word.charAt(letterIndex).toUpperCase() + 
-           word.slice(letterIndex + 1).toLowerCase();
-  };
-
   const renderTitle = () => {
-    const title = getTitleVibe();
-    if (title === "StreakFlow") {
-      return (
-        <span className="d-inline-flex align-items-center gap-2">
-          <HiFire color="var(--theme-primary, #ff6b00)" size={35} />
-          <b>
-            <span className="premium-glow-text">Streak</span>
-            <span style={{ color: "var(--theme-primary, #ff6b00)" }}>Flow</span>
-          </b>
-        </span>
-      );
-    }
-    
-    const parts = title.split(" ");
-    if (parts.length > 1) {
-      const lastWord = parts[parts.length - 1];
-      const firstPartWords = parts.slice(0, parts.length - 1);
-      const formattedFirstPart = firstPartWords.map(capitalizeWord).join(" ");
-      const formattedLastWord = capitalizeWord(lastWord);
-      return (
+    return (
+      <span className="d-inline-flex align-items-center gap-2">
+        <NivoraIcon size={35} />
         <b>
-          <span className="premium-glow-text">{formattedFirstPart}</span>
-          <span style={{ color: "var(--theme-primary)" }}>{formattedLastWord}</span>
+          <span className="premium-glow-text">Nivora</span>
         </b>
-      );
-    }
-    
-    return <b className="premium-glow-text">{capitalizeWord(title)}</b>;
+      </span>
+    );
   };
 
   // Stats
@@ -302,7 +299,7 @@ export default function Home({ user }) {
 
     if (user?.id) {
       const orderIds = reordered.map(r => r.id);
-      localStorage.setItem(`streakflow_order_${user.id}`, JSON.stringify(orderIds));
+      localStorage.setItem(`nivora_order_${user.id}`, JSON.stringify(orderIds));
     }
 
     setDraggedIndex(null);
@@ -362,7 +359,19 @@ export default function Home({ user }) {
           </h2>
           <div className="d-flex align-items-center gap-2">
             <button
-              onClick={async () => await supabase.auth.signOut()}
+              onClick={handleToggleNotifications}
+              className="logout-btn d-flex align-items-center gap-2"
+              title={notificationsEnabled ? "Disable Reminders" : "Enable Reminders"}
+              style={{
+                borderColor: notificationsEnabled ? "rgba(255, 107, 0, 0.4)" : "rgba(255, 255, 255, 0.15)",
+                color: notificationsEnabled ? "var(--theme-primary, #ff6b00)" : "#9ca3af"
+              }}
+            >
+              {notificationsEnabled ? <FiBell size={16} /> : <FiBellOff size={16} />}
+              <span className="logout-text">{notificationsEnabled ? "Reminders On" : "Reminders Off"}</span>
+            </button>
+            <button
+              onClick={handleLogout}
               className="logout-btn d-flex align-items-center gap-2"
             >
               <FiLogOut size={16} />
@@ -387,10 +396,10 @@ export default function Home({ user }) {
               >
                 <div className="d-flex align-items-center gap-3">
                   <div className="p-2 rounded-circle" style={{ background: "rgba(255, 107, 0, 0.15)", flexShrink: 0 }}>
-                    <HiFire size={24} color="var(--theme-primary, #ff6b00)" />
+                    <NivoraIcon size={24} />
                   </div>
                   <div>
-                    <div className="fw-bold text-white" style={{ fontSize: "14px", lineHeight: "1.2" }}>Install StreakFlow App</div>
+                    <div className="fw-bold text-white" style={{ fontSize: "14px", lineHeight: "1.2" }}>Install Nivora App</div>
                     <div className="text-secondary" style={{ fontSize: "11px", marginTop: "2px", lineHeight: "1.3" }}>Add to home screen for faster, native access!</div>
                   </div>
                 </div>
@@ -447,7 +456,7 @@ export default function Home({ user }) {
             >
               <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center gap-3">
-                  <HiFire size={50} color="var(--theme-primary, #ff6b00)" />
+                  <NivoraIcon size={50} />
                   <div>
                     <div className="subheading mb-1">Longest Streak</div>
                     <div style={{ fontSize: "28px", color: "var(--theme-primary, #ff6b00)", fontWeight: "bold", lineHeight: "1.2" }}>{longestStreak}</div>

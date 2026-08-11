@@ -1,4 +1,4 @@
-package com.streakflow.app;
+package com.nivora.app;
 
 import com.getcapacitor.BridgeActivity;
 

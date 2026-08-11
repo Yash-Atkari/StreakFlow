@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "../components/NivoraIcon";
 import { playTap, playErrorPluck } from "../utils/audio";
 
 import { analytics } from "../services/mobile/analytics";
@@ -140,10 +140,9 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-4">
           <span className="d-inline-flex align-items-center gap-2" style={{ fontSize: "28px" }}>
-            <HiFire color="#ff6b00" size={35} />
+            <NivoraIcon size={35} />
             <b>
-              <span style={{ color: "white" }}>Streak</span>
-              <span style={{ color: "#ff6b00" }}>Flow</span>
+              <span style={{ color: "white" }}>Nivora</span>
             </b>
           </span>
         </div>

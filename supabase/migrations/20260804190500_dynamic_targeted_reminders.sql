@@ -20,14 +20,14 @@ BEGIN
       WHEN r.current_streak >= 3 AND r.last_completed_date::date = v_now::date THEN
         '🏆 Milestone Achieved!'::text
       ELSE
-        '⚡ StreakFlow Reminder'::text
+        '⚡ Nivora Reminder'::text
     END AS title,
     -- Dynamic Body
     CASE 
       WHEN r.current_streak > 0 AND (r.submit_window = true AND (v_now AT TIME ZONE coalesce(r.timezone, 'UTC'))::time >= (r.end_time::time - interval '2 hours')) THEN
         ('Save your ' || r.current_streak || '-day streak on "' || r.title || '" before it expires!')::text
       WHEN r.current_streak >= 3 AND r.last_completed_date::date = v_now::date THEN
-        ('Fantastic! You just reached a ' || r.current_streak || '-day streak on "' || r.title || '"! Keep it burning.')::text
+        ('Fantastic! You just reached a ' || r.current_streak || '-day streak on "' || r.title || '"! Keep rising.')::text
       ELSE
         ('Don''t lose your momentum! Time for your ritual: "' || r.title || '". Show up for yourself.')::text
     END AS body

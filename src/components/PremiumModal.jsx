@@ -78,7 +78,7 @@ export default function PremiumModal({ close, refresh }) {
         {/* Header */}
         <div className="d-flex justify-content-between mb-3 align-items-center">
           <h5 className="mb-0">
-            {step === "success" ? "Welcome!" : "StreakFlow Premium"}
+            {step === "success" ? "Welcome!" : "Nivora Premium"}
           </h5>
           <span style={{ cursor: "pointer", fontSize: "18px" }} onClick={handleClose}>✕</span>
         </div>
@@ -184,7 +184,7 @@ export default function PremiumModal({ close, refresh }) {
             <div className="mb-3 d-flex justify-content-center">
               <FiAward size={60} color="var(--theme-primary)" style={{ animation: "pop 0.5s ease" }} />
             </div>
-            <h4 className="mb-2 text-warning">StreakFlow Premium Activated!</h4>
+            <h4 className="mb-2 text-warning">Nivora Premium Activated!</h4>
             <p className="text-muted small mb-4">
               The developer preview is now unlocked. We've updated your user subscription and credited 3 Streak Shields to your account.
             </p>

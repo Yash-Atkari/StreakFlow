@@ -47,7 +47,7 @@ export function PremiumProvider({ children, user }) {
         shields = data.streak_shields;
       } else {
         // Fallback checks
-        const localShields = parseInt(localStorage.getItem(`streakflow_shields_fallback_${user.id}`) || "3", 10);
+        const localShields = parseInt(localStorage.getItem(`nivora_shields_fallback_${user.id}`) || "3", 10);
 
         const { data: newRow, error: insertError } = await supabase
           .from("user_subscriptions")
@@ -80,7 +80,7 @@ export function PremiumProvider({ children, user }) {
 
     } catch (err) {
       console.warn("DB subscription load warning, falling back to local metadata/cache:", err);
-      const localShields = parseInt(localStorage.getItem(`streakflow_shields_fallback_${user.id}`) || "3", 10);
+      const localShields = parseInt(localStorage.getItem(`nivora_shields_fallback_${user.id}`) || "3", 10);
       setIsPremium(true);
       setShieldsCount(localShields);
     } finally {
@@ -130,8 +130,8 @@ export function PremiumProvider({ children, user }) {
       setShieldsCount((prev) => prev + 3);
     } catch (err) {
       console.warn("Unlock DB upsert failed, using fallback:", err);
-      localStorage.setItem(`streakflow_premium_fallback_${user.id}`, "true");
-      localStorage.setItem(`streakflow_shields_fallback_${user.id}`, String(shieldsCount + 3));
+      localStorage.setItem(`nivora_premium_fallback_${user.id}`, "true");
+      localStorage.setItem(`nivora_shields_fallback_${user.id}`, String(shieldsCount + 3));
       setIsPremium(true);
       setShieldsCount((prev) => prev + 3);
     }
@@ -150,7 +150,7 @@ export function PremiumProvider({ children, user }) {
       setShieldsCount(newCount);
     } catch (err) {
       console.warn("Update DB shield count failed, using fallback:", err);
-      localStorage.setItem(`streakflow_shields_fallback_${user.id}`, String(newCount));
+      localStorage.setItem(`nivora_shields_fallback_${user.id}`, String(newCount));
       setShieldsCount(newCount);
     }
   };

@@ -1,6 +1,6 @@
 {
-  "appId": "com.streakflow.app",
-  "appName": "StreakFlow",
+  "appId": "com.nivora.app",
+  "appName": "Nivora",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

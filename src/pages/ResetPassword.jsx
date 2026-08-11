@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import { HiFire } from "react-icons/hi";
+import NivoraIcon from "../components/NivoraIcon";
 
 export default function ResetPassword({ onComplete }) {
   const [password, setPassword] = useState("");
@@ -60,7 +60,7 @@ export default function ResetPassword({ onComplete }) {
         {/* Logo */}
         <div className="text-center mb-3">
           <h3 style={{ fontWeight: "bold", color: "white" }}>
-            <HiFire color="#ff6b00" /> StreakFlow
+            <NivoraIcon color="#ff6b00" /> Nivora
           </h3>
         </div>
 

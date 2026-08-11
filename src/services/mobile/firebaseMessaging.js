@@ -6,6 +6,10 @@ import { mobileCrashlytics } from "./firebaseCrashlytics";
 const isNative = Capacitor.isNativePlatform();
 
 export const setupMobileNotifications = async (userId) => {
+  if (localStorage.getItem("nivora_notifications_enabled") === "false") {
+    console.log("FCM Mobile: Notifications are disabled by user preference.");
+    return;
+  }
   if (!isNative) {
     console.log("FCM Mobile: Skipping native push notifications setup on web.");
     return;

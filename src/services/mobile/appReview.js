@@ -9,7 +9,7 @@ export const triggerInAppReview = async (force = false) => {
 
   try {
     // 1. Retrieve how many times habits have been completed
-    const launchCountKey = "streakflow_app_launches";
+    const launchCountKey = "nivora_app_launches";
     const launchCount = parseInt(localStorage.getItem(launchCountKey) || "0", 10);
     
     // Only prompt if they have opened the app at least 3 times, OR we force prompt it (e.g., on key streak milestones)
@@ -19,7 +19,7 @@ export const triggerInAppReview = async (force = false) => {
     }
 
     // 2. Check last prompted date to prevent spamming
-    const lastPromptKey = "streakflow_last_review_prompt";
+    const lastPromptKey = "nivora_last_review_prompt";
     const lastPrompt = localStorage.getItem(lastPromptKey);
     if (lastPrompt && !force) {
       const lastPromptDate = new Date(lastPrompt);
@@ -48,7 +48,7 @@ export const triggerInAppReview = async (force = false) => {
 // Increment launch count on start
 export const incrementLaunchCount = () => {
   try {
-    const launchCountKey = "streakflow_app_launches";
+    const launchCountKey = "nivora_app_launches";
     const currentCount = parseInt(localStorage.getItem(launchCountKey) || "0", 10);
     localStorage.setItem(launchCountKey, String(currentCount + 1));
   } catch (e) {

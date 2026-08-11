@@ -119,7 +119,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
     if (!ritual) {
       analytics.logHabitCreated(form.title, form.repeat_type, form.reward_target_streak || null);
       
-      const onboardingKey = `streakflow_onboarding_done_${user.id}`;
+      const onboardingKey = `nivora_onboarding_done_${user.id}`;
       if (!localStorage.getItem(onboardingKey)) {
         analytics.logOnboardingCompleted();
         localStorage.setItem(onboardingKey, "true");

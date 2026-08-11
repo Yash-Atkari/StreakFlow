@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">StreakFlow</string>
-    <string name="title_activity_main">StreakFlow</string>
-    <string name="package_name">com.streakflow.app</string>
-    <string name="custom_url_scheme">com.streakflow.app</string>
+    <string name="app_name">Nivora</string>
+    <string name="title_activity_main">Nivora</string>
+    <string name="package_name">com.nivora.app</string>
+    <string name="custom_url_scheme">com.nivora.app</string>
 </resources>
