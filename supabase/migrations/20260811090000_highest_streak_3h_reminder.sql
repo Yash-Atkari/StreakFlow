@@ -14,7 +14,7 @@ BEGIN
     SELECT 
       r.id,
       r.user_id,
-      r.title,
+      r.title AS habit_title,
       r.current_streak,
       r.timezone,
       r.last_notified_at
@@ -46,7 +46,7 @@ BEGIN
     SELECT DISTINCT ON (user_id)
       id,
       user_id,
-      title,
+      habit_title,
       current_streak,
       timezone,
       last_notified_at
@@ -54,14 +54,14 @@ BEGIN
     ORDER BY user_id, current_streak DESC
   )
   SELECT 
-    t.token,
+    t.token AS token,
     h.id AS ritual_id,
     '🔥 StreakFlow Reminder'::text AS title,
     CASE 
       WHEN h.current_streak > 0 THEN
-        ('Don''t lose your ' || h.current_streak || '-day streak! Time to complete your habit: "' || h.title || '".')::text
+        ('Don''t lose your ' || h.current_streak || '-day streak! Time to complete your habit: "' || h.habit_title || '".')::text
       ELSE
-        ('Time to start your new streak! Show up for your habit: "' || h.title || '".')::text
+        ('Time to start your new streak! Show up for your habit: "' || h.habit_title || '".')::text
     END AS body
   FROM fcm_tokens t
   JOIN highest_streak_rituals h ON t.user_id = h.user_id
