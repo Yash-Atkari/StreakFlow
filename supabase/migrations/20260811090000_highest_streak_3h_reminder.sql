@@ -1,4 +1,4 @@
--- Migration: Update get_active_reminders() to target the highest-streak uncompleted habit for today at a 3-hour interval
+-- Migration: Update get_active_reminders() to target the highest-streak uncompleted habit for today at a 2-hour interval
 CREATE OR REPLACE FUNCTION get_active_reminders()
 RETURNS TABLE (
   token text,
@@ -70,8 +70,8 @@ BEGIN
   FROM fcm_tokens t
   JOIN highest_streak_rituals h ON t.user_id = h.user_id
   WHERE 
-    -- 3. Check if we haven't already sent a notification in the last 3 hours
-    (h.last_notified_at IS NULL OR h.last_notified_at < v_now - interval '3 hours')
+    -- 3. Check if we haven't already sent a notification in the last 2 hours
+    (h.last_notified_at IS NULL OR h.last_notified_at < v_now - interval '2 hours')
     -- 4. Check if it's currently daytime (9:00 AM to 9:00 PM local time) to prevent late-night disturbances
     AND extract(hour from (v_now AT TIME ZONE coalesce(h.timezone, 'UTC')))::integer BETWEEN 9 AND 21;
 END;
