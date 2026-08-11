@@ -16,7 +16,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
+let isSettingUp = false;
+let hasSetup = false;
+
 export const setupNotifications = async (userId) => {
+  if (isSettingUp || hasSetup) return;
+  isSettingUp = true;
   try {
     // 1. Request Permission
     const permission = await Notification.requestPermission();
@@ -59,7 +64,10 @@ export const setupNotifications = async (userId) => {
       // Optional: Add a toast notification library here to show a UI alert
     });
 
+    hasSetup = true;
   } catch (error) {
     console.error("Error setting up FCM:", error);
+  } finally {
+    isSettingUp = false;
   }
 };
