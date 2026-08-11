@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
       },
       webpush: {
         notification: {
-          icon: 'https://streak-flow.netlify.app/logo192.png',
-          badge: 'https://streak-flow.netlify.app/favicon.svg',
+          icon: 'https://streak-flow.netlify.app/transparent.png',
+          badge: 'https://streak-flow.netlify.app/logo-flame.png',
         }
       },
       token: r.token,
