@@ -19,16 +19,10 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 // 5. Handle Background Notifications
+// Firebase SDK automatically displays notifications when the payload contains a 'notification' object.
+// We only use onBackgroundMessage for custom logging.
 messaging.onBackgroundMessage((payload) => {
   console.log('Received background message: ', payload);
-  
-  const notificationTitle = payload.notification?.title || 'StreakFlow Reminder';
-  const notificationOptions = {
-    body: payload.notification?.body || 'Time to complete your habits!',
-    icon: '/logo192.png', 
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 6. The PWA "Fetch" Trick
