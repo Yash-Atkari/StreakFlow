@@ -30,12 +30,8 @@ BEGIN
       AND (
         r.repeat_type = 'daily'
         OR (r.repeat_type = 'custom' AND (
-          CASE 
-            WHEN pg_typeof(r.custom_days)::text = 'jsonb' THEN
-              r.custom_days @> jsonb_build_array(extract(dow from (v_now AT TIME ZONE coalesce(r.timezone, 'UTC'))::date)::integer)
-            ELSE
-              r.custom_days IS NOT NULL AND extract(dow from (v_now AT TIME ZONE coalesce(r.timezone, 'UTC'))::date)::integer = ANY(r.custom_days::integer[])
-          END
+          r.custom_days IS NOT NULL 
+          AND extract(dow from (v_now AT TIME ZONE coalesce(r.timezone, 'UTC'))::date)::integer = ANY(r.custom_days)
         ))
         OR ((r.repeat_type = 'weekly' OR r.repeat_type = 'biweekly') AND (
           extract(dow from (r.created_at AT TIME ZONE coalesce(r.timezone, 'UTC'))::date)::integer = extract(dow from (v_now AT TIME ZONE coalesce(r.timezone, 'UTC'))::date)::integer
