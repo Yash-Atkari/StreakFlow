@@ -20,7 +20,7 @@ export default function RitualCard({
   onOpenPremium
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { isPremium, shieldsCount, useShieldPass, user } = usePremium();
+  const { isPremium, shieldsCount, applyShieldPass, user } = usePremium();
   const { alert, confirm } = useDialog();
 
   const activeTheme = user?.user_metadata?.premium_theme || "default";
@@ -159,7 +159,7 @@ export default function RitualCard({
     const value = await confirm("Use 1 Streak Shield to recover this streak?", "Confirm Recovery");
     if (value) {
       playShieldCharge();
-      const success = await useShieldPass(ritual.id);
+      const success = await applyShieldPass(ritual.id);
       if (success) {
         await alert("Streak Shield Applied! Your streak has been successfully restored.", "Success");
         refresh();

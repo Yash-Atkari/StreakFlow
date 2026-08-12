@@ -6,6 +6,7 @@ import "../styles/modal.css";
 export default function AddRitualModal({ close, refresh, ritual }) {
   const [closing, setClosing] = useState(false);
   const [errors, setErrors] = useState({}); // Track validation errors
+  const [submitting, setSubmitting] = useState(false); // Track loading state
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -27,6 +28,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
   });
 
   const handleClose = () => {
+    if (submitting) return;
     setClosing(true);
     setTimeout(() => {
       close();
@@ -44,6 +46,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
   ];
 
   const toggleDay = (value) => {
+    if (submitting) return;
     let updated = [...form.custom_days];
     if (updated.includes(value)) {
       updated = updated.filter((d) => d !== value);
@@ -82,52 +85,63 @@ export default function AddRitualModal({ close, refresh, ritual }) {
       return; // Stop here if there are errors
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setErrors({ auth: "You must be logged in to save rituals." });
-      return;
-    }
+    setSubmitting(true);
+    setErrors({});
 
-    const payload = {
-      ...form,
-      user_id: user.id,
-      reward_title: form.reward_title.trim() || null,
-      reward_target_streak: form.reward_title.trim() ? parseInt(form.reward_target_streak, 10) : null,
-    };
-
-    if (!form.submit_window) {
-      payload.start_time = null;
-      payload.end_time = null;
-    }
-
-    let error;
-    if (ritual) {
-      const res = await supabase.from("rituals").update(payload).eq("id", ritual.id);
-      error = res.error;
-    } else {
-      const res = await supabase.from("rituals").insert([payload]);
-      error = res.error;
-    }
-
-    if (error) {
-      console.error(error);
-      setErrors({ submit: "Something went wrong on our end. Please try again." });
-      return;
-    }
-
-    // Log Analytics events on success
-    if (!ritual) {
-      analytics.logHabitCreated(form.title, form.repeat_type, form.reward_target_streak || null);
-      
-      const onboardingKey = `nivora_onboarding_done_${user.id}`;
-      if (!localStorage.getItem(onboardingKey)) {
-        analytics.logOnboardingCompleted();
-        localStorage.setItem(onboardingKey, "true");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setErrors({ auth: "You must be logged in to save rituals." });
+        setSubmitting(false);
+        return;
       }
-    }
 
-    refresh();
-    close();
+      const payload = {
+        ...form,
+        user_id: user.id,
+        reward_title: form.reward_title.trim() || null,
+        reward_target_streak: form.reward_title.trim() ? parseInt(form.reward_target_streak, 10) : null,
+      };
+
+      if (!form.submit_window) {
+        payload.start_time = null;
+        payload.end_time = null;
+      }
+
+      let error;
+      if (ritual) {
+        const res = await supabase.from("rituals").update(payload).eq("id", ritual.id);
+        error = res.error;
+      } else {
+        const res = await supabase.from("rituals").insert([payload]);
+        error = res.error;
+      }
+
+      if (error) {
+        console.error(error);
+        setErrors({ submit: "Something went wrong on our end. Please try again." });
+        setSubmitting(false);
+        return;
+      }
+
+      // Log Analytics events on success
+      if (!ritual) {
+        analytics.logHabitCreated(form.title, form.repeat_type, form.reward_target_streak || null);
+        
+        const onboardingKey = `nivora_onboarding_done_${user.id}`;
+        if (!localStorage.getItem(onboardingKey)) {
+          analytics.logOnboardingCompleted();
+          localStorage.setItem(onboardingKey, "true");
+        }
+      }
+
+      refresh();
+      close();
+    } catch (err) {
+      console.error(err);
+      setErrors({ submit: err.message || "An unexpected error occurred." });
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -152,6 +166,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
             setForm({ ...form, title: e.target.value });
             if (errors.title) setErrors({ ...errors, title: null });
           }}
+          disabled={submitting}
         />
         {errors.title && <div className="error-message">{errors.title}</div>}
 
@@ -162,6 +177,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
           placeholder="Optional details..."
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
+          disabled={submitting}
         />
 
         {/* Recurrence */}
@@ -171,10 +187,12 @@ export default function AddRitualModal({ close, refresh, ritual }) {
             <button
               key={type}
               onClick={() => {
+                if (submitting) return;
                 setForm({ ...form, repeat_type: type });
                 setErrors({ ...errors, custom_days: null });
               }}
               className={`pill ${form.repeat_type === type ? "active" : ""}`}
+              disabled={submitting}
             >
               {type}
             </button>
@@ -191,6 +209,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
                   key={day.value}
                   onClick={() => toggleDay(day.value)}
                   className={`pill ${form.custom_days.includes(day.value) ? "active" : ""}`}
+                  disabled={submitting}
                 >
                   {day.label}
                 </button>
@@ -206,7 +225,10 @@ export default function AddRitualModal({ close, refresh, ritual }) {
           <span className="small" style={{ color: "#a1a1aa" }}>Restrict check-ins to a specific time</span>
           <div
             className={`toggle ${form.submit_window ? "active" : ""}`}
-            onClick={() => setForm({ ...form, submit_window: !form.submit_window })}
+            onClick={() => {
+              if (submitting) return;
+              setForm({ ...form, submit_window: !form.submit_window });
+            }}
           >
             <div className="toggle-circle"></div>
           </div>
@@ -222,6 +244,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
                 className="time-input"
                 value={form.start_time}
                 onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                disabled={submitting}
               />
             </div>
             <div className="time-box">
@@ -231,6 +254,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
                 className="time-input"
                 value={form.end_time}
                 onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                disabled={submitting}
               />
             </div>
           </div>
@@ -245,6 +269,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
               placeholder="e.g., To feel healthy and energized"
               value={form.reward_title || ""}
               onChange={(e) => setForm({ ...form, reward_title: e.target.value })}
+              disabled={submitting}
             />
           </div>
           <div className="col-4">
@@ -258,6 +283,7 @@ export default function AddRitualModal({ close, refresh, ritual }) {
                 setForm({ ...form, reward_target_streak: e.target.value });
                 if (errors.reward_target_streak) setErrors({ ...errors, reward_target_streak: null });
               }}
+              disabled={submitting}
             />
           </div>
         </div>
@@ -275,8 +301,8 @@ export default function AddRitualModal({ close, refresh, ritual }) {
         ) : null}
 
         {/* Action Button */}
-        <button onClick={handleSave} className="primary-btn mt-2">
-          {ritual ? "Update Ritual" : "Create Ritual"}
+        <button onClick={handleSave} className="primary-btn mt-2" disabled={submitting}>
+          {submitting ? "Processing..." : (ritual ? "Update Ritual" : "Create Ritual")}
         </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import NivoraIcon from "./NivoraIcon";
 import { FiAward, FiSliders, FiShield } from "react-icons/fi";
 import { useDialog } from "../contexts/DialogContext";
@@ -10,16 +10,15 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
   const { alert } = useDialog();
   const [activeSlide, setActiveSlide] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [recapData, setRecapData] = useState(null);
   const timerRef = useRef(null);
   const [progressVal, setProgressVal] = useState(0);
 
   const numSlides = 5;
   const slideDuration = 4000;
 
-  // Calculate the insights dynamically on mount
-  useEffect(() => {
-    if (!user?.id) return;
+  // Calculate the insights dynamically using useMemo
+  const recapData = useMemo(() => {
+    if (!user?.id) return null;
 
     const totalRituals = rituals.length;
 
@@ -85,7 +84,7 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
 
     const theme = user?.user_metadata?.premium_theme || "default";
 
-    const generated = {
+    return {
       totalRituals,
       totalToday,
       completedToday,
@@ -97,8 +96,6 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
       theme,
       generatedAt: new Date().toISOString()
     };
-
-    setRecapData(generated);
   }, [rituals, user]);
 
   // Slide Progress Timer
@@ -130,11 +127,13 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [paused, activeSlide, recapData]);
+  }, [paused, activeSlide, recapData, onClose]);
 
-  useEffect(() => {
+  const [prevActiveSlide, setPrevActiveSlide] = useState(activeSlide);
+  if (activeSlide !== prevActiveSlide) {
+    setPrevActiveSlide(activeSlide);
     setProgressVal(0);
-  }, [activeSlide]);
+  }
 
   const handleNext = () => {
     playTap();
@@ -189,16 +188,6 @@ export default function WeeklyRecapStory({ rituals, user, onClose }) {
       </div>
     );
   }
-
-  // Brand theme display names and quotes
-  const themeName = {
-    default: "Default Orange",
-    glowup: "Cyberpunk Glow",
-    zen: "Zen Emerald",
-    gym: "Volcanic Gym",
-    study: "Deep Ocean Study",
-    healing: "Lavender Healing",
-  }[recapData.theme] || "Default";
 
   return (
     <div className="story-recap-overlay">

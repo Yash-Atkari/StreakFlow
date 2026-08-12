@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "../services/supabaseClient";
 import { useDialog } from "./DialogContext";
 import { revenueCatService } from "../services/mobile/revenueCat";
@@ -12,7 +13,7 @@ const PremiumContext = createContext({
   refreshPremium: () => {},
   unlockPremium: () => {},
   buyShields: () => {},
-  useShieldPass: async () => false,
+  applyShieldPass: async () => false,
   restorePurchases: async () => false
 });
 
@@ -22,7 +23,7 @@ export function PremiumProvider({ children, user }) {
   const [shieldsCount, setShieldsCount] = useState(3); // Start with at least 3 shields
   const [loading, setLoading] = useState(true);
 
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     if (!user) {
       setIsPremium(true);
       setShieldsCount(0);
@@ -40,7 +41,6 @@ export function PremiumProvider({ children, user }) {
 
       if (error) throw error;
 
-      let premiumStatus = true; // Force premium status to true
       let shields = 3; // Default starting shields to 3
 
       if (data) {
@@ -86,11 +86,11 @@ export function PremiumProvider({ children, user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchSubscription();
-  }, [user]);
+  }, [fetchSubscription]);
 
   const unlockPremium = async () => {
     if (!user) return;
@@ -155,7 +155,7 @@ export function PremiumProvider({ children, user }) {
     }
   };
 
-  const useShieldPass = async (ritualId) => {
+  const applyShieldPass = async (ritualId) => {
     if (!user) return false;
     try {
       const { data, error } = await supabase.rpc("apply_streak_shield", {
@@ -220,7 +220,7 @@ export function PremiumProvider({ children, user }) {
       refreshPremium: fetchSubscription,
       unlockPremium,
       buyShields,
-      useShieldPass,
+      applyShieldPass,
       restorePurchases
     }}>
       {children}

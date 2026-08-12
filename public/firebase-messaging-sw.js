@@ -1,3 +1,4 @@
+/* global importScripts, firebase */
 // 1. Import Firebase libraries for Service Workers
 importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js');
@@ -26,6 +27,6 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // 6. The PWA "Fetch" Trick
-self.addEventListener('fetch', function(event) {
+self.addEventListener('fetch', () => {
   // tricks Chrome into passing the PWA offline check
 });

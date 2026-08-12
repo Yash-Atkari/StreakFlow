@@ -147,9 +147,21 @@ export default function Login() {
           </span>
         </div>
 
-        {view !== "login" && (
+        {view === "login" && (
+          <h5 className="mb-4 text-center" style={{ color: "#eee" }}>
+            Login
+          </h5>
+        )}
+
+        {view === "forgot-password" && (
           <h5 className="mb-4 text-center" style={{ color: "#eee" }}>
             Reset Password
+          </h5>
+        )}
+
+        {view === "signup" && (
+          <h5 className="mb-4 text-center" style={{ color: "#eee" }}>
+            Create New Account
           </h5>
         )}
 
@@ -167,25 +179,27 @@ export default function Login() {
               if (errors.email) setErrors({ ...errors, email: null });
             }}
             style={{ ...inputStyle, borderColor: errors.email ? "#ff4d4d" : "#222" }}
+            disabled={loading}
           />
           {errors.email && <div style={errorTextStyle}>{errors.email}</div>}
         </div>
 
-        {view === "login" ? (
-          <>
-            {/* Password */}
-            <div className="mb-4">
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (errors.password) setErrors({ ...errors, password: null });
-                }}
-                style={{ ...inputStyle, borderColor: errors.password ? "#ff4d4d" : "#222" }}
-              />
-              {errors.password && <div style={errorTextStyle}>{errors.password}</div>}
+        {(view === "login" || view === "signup") && (
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: null });
+              }}
+              style={{ ...inputStyle, borderColor: errors.password ? "#ff4d4d" : "#222" }}
+              disabled={loading}
+            />
+            {errors.password && <div style={errorTextStyle}>{errors.password}</div>}
+            
+            {view === "login" && (
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
                 <span
                   onClick={() => {
@@ -204,8 +218,12 @@ export default function Login() {
                   Forgot Password?
                 </span>
               </div>
-            </div>
+            )}
+          </div>
+        )}
 
+        {view === "login" && (
+          <>
             {/* Buttons */}
             <button 
               onClick={handleLogin} 
@@ -216,14 +234,47 @@ export default function Login() {
             </button>
 
             <button 
-              onClick={handleSignup} 
+              onClick={() => {
+                setView("signup");
+                setErrors({});
+                setEmail("");
+                setPassword("");
+              }} 
               className="secondary-btn"
               disabled={loading}
             >
               Create New Account
             </button>
           </>
-        ) : (
+        )}
+
+        {view === "signup" && (
+          <>
+            {/* Buttons */}
+            <button 
+              onClick={handleSignup} 
+              className="primary-btn mb-2"
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Create New Account"}
+            </button>
+
+            <button 
+              onClick={() => {
+                setView("login");
+                setErrors({});
+                setEmail("");
+                setPassword("");
+              }} 
+              className="secondary-btn"
+              disabled={loading}
+            >
+              Back to Login
+            </button>
+          </>
+        )}
+
+        {view === "forgot-password" && (
           <>
             {/* Reset Request Button */}
             <button 
@@ -239,6 +290,8 @@ export default function Login() {
               onClick={() => {
                 setView("login");
                 setErrors({});
+                setEmail("");
+                setPassword("");
               }} 
               className="secondary-btn"
               disabled={loading}

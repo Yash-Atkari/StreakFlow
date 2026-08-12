@@ -24,6 +24,7 @@ import { isDateRequired, isCompletedToday, calculateStreak } from "../utils/stre
 // Premium imports
 import PremiumModal from "../components/PremiumModal";
 import WeeklyRecapStory from "../components/WeeklyRecapStory";
+import SuggestionModal from "../components/SuggestionModal";
 import { usePremium } from "../contexts/PremiumContext";
 import AnalyticsTab from "../components/AnalyticsTab";
 import { useDialog } from "../contexts/DialogContext";
@@ -45,6 +46,7 @@ export default function Home({ user }) {
   // Premium UI states
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showRecapStory, setShowRecapStory] = useState(false);
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
 
   // Active tab state
   const [activeTab, setActiveTab] = useState("tracker");
@@ -477,32 +479,78 @@ export default function Home({ user }) {
             {/* Ritual List */}
             {loading ? (
               <div className="text-center mt-5 text-secondary">Loading your flow...</div>
-            ) : rituals.length === 0 ? (
-              <div className="text-center mt-5 text-secondary">
-                No {getHabitTerm()} defined. Start with one.
-              </div>
             ) : (
-              rituals.map((r, index) => (
+              <>
+                {rituals.length === 0 ? (
+                  <div className="text-center mt-5 mb-4 text-secondary">
+                    No {getHabitTerm()} defined. Start with one.
+                  </div>
+                ) : (
+                  rituals.map((r, index) => (
+                    <div
+                      key={r.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      className={`draggable-ritual-container ${
+                        draggedIndex === index ? "dragging" : ""
+                      } ${dragOverIndex === index ? "drag-over" : ""}`}
+                    >
+                      <RitualCard
+                        ritual={r}
+                        refresh={fetchRituals}
+                        onEdit={setSelectedRitual}
+                        openModal={() => setOpen(true)}
+                        onCelebrate={(streak) => setCelebrationStreak(streak)}
+                        onOpenPremium={() => setShowPremiumModal(true)}
+                      />
+                    </div>
+                  ))
+                )}
+
+                {/* Suggestion Box Habit Card */}
                 <div
-                  key={r.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDrop={(e) => handleDrop(e, index)}
-                  className={`draggable-ritual-container ${
-                    draggedIndex === index ? "dragging" : ""
-                  } ${dragOverIndex === index ? "drag-over" : ""}`}
+                  className="mb-3 ritual-card-premium"
+                  style={{
+                    background: "var(--theme-card-bg, rgba(22, 22, 26, 0.7))",
+                    borderRadius: "18px",
+                    border: "1px solid var(--theme-card-border, rgba(255, 255, 255, 0.06))",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease"
+                  }}
+                  onClick={() => {
+                    playTap();
+                    setShowSuggestionModal(true);
+                  }}
                 >
-                  <RitualCard
-                    ritual={r}
-                    refresh={fetchRituals}
-                    onEdit={setSelectedRitual}
-                    openModal={() => setOpen(true)}
-                    onCelebrate={(streak) => setCelebrationStreak(streak)}
-                    onOpenPremium={() => setShowPremiumModal(true)}
-                  />
+                  <div className="d-flex align-items-center p-3 gap-3">
+                    <div
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        border: "2px solid var(--theme-primary, #ff6b00)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(255, 107, 0, 0.1)",
+                        flexShrink: 0
+                      }}
+                    >
+                      <span style={{ fontSize: "12px", color: "var(--theme-primary, #ff6b00)", fontWeight: "bold" }}>?</span>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "15px", fontWeight: "bold", color: "white" }}>
+                        Suggestion Box
+                      </div>
+                      <div className="text-secondary" style={{ fontSize: "11px" }}>
+                        Tap to suggest improvements & features
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))
+              </>
             )}
 
             {/* Add Button */}
@@ -541,12 +589,12 @@ export default function Home({ user }) {
             
             <div className="row g-3">
               {[
-                { id: "default", name: "Default Orange", desc: "Classic energy and simple momentum.", primaryColor: "#ff6b00" },
-                { id: "glowup", name: "Cyberpunk Glow", desc: "Neon cyberpunk styling and pink highlights.", primaryColor: "#ec4899" },
-                { id: "zen", name: "Zen Emerald", desc: "Soothing colors and minimal focus.", primaryColor: "#10b981" },
-                { id: "gym", name: "Volcanic Gym", desc: "Amber fire highlights and intense colors.", primaryColor: "#f59e0b" },
-                { id: "study", name: "Ocean Study", desc: "Analytical focus and deep blue accents.", primaryColor: "#3b82f6" },
-                { id: "healing", name: "Lavender Healing", desc: "Relaxing shades and calm purple lines.", primaryColor: "#8b5cf6" }
+                { id: "default", name: "Orange", desc: "Classic orange styling and simple momentum.", primaryColor: "#ff6b00" },
+                { id: "glowup", name: "Pink", desc: "Neon pink highlights and vibrant outlines.", primaryColor: "#ec4899" },
+                { id: "zen", name: "Green", desc: "Soothing green colors and minimal focus.", primaryColor: "#10b981" },
+                { id: "gym", name: "Yellow", desc: "Amber yellow highlights and warm tones.", primaryColor: "#f59e0b" },
+                { id: "study", name: "Blue", desc: "Clean blue styling and deep accents.", primaryColor: "#3b82f6" },
+                { id: "healing", name: "Purple", desc: "Lavender purple shades and calm lines.", primaryColor: "#8b5cf6" }
               ].map((t) => {
                 const isActive = activeTheme === t.id;
                 return (
@@ -710,6 +758,14 @@ export default function Home({ user }) {
             rituals={rituals}
             user={user}
             onClose={() => setShowRecapStory(false)}
+          />
+        )}
+
+        {/* Suggestion Box Form Overlay */}
+        {showSuggestionModal && (
+          <SuggestionModal 
+            user={user}
+            close={() => setShowSuggestionModal(false)}
           />
         )}
       </div>

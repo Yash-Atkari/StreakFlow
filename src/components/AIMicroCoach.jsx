@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { FiCpu } from "react-icons/fi";
 import "../styles/premium.css";
 
-export default function AIMicroCoach({ rituals, user }) {
-  const [nudge, setNudge] = useState("");
-  const [tipsPool, setTipsPool] = useState([]);
+export default function AIMicroCoach({ rituals }) {
   const [tipIndex, setTipIndex] = useState(0);
 
-  useEffect(() => {
+  const tipsPool = useMemo(() => {
     const pool = [];
 
     if (rituals.length === 0) {
@@ -57,17 +55,15 @@ export default function AIMicroCoach({ rituals, user }) {
       pool.push("Consistency beats intensity. 5 minutes of meditation daily beats 1 hour once a week.");
       pool.push("Habits become identity. Every check-in is a vote for the person you want to become.");
     }
+    return pool;
+  }, [rituals]);
 
-    setTipsPool(pool);
-    setNudge(pool[0] || "Your AI Micro-Coach is ready. Complete your habits to unlock tailored nudges!");
-    setTipIndex(0);
-  }, [rituals, user]);
+  const activeIndex = tipIndex < tipsPool.length ? tipIndex : 0;
+  const nudge = tipsPool[activeIndex] || "Your AI Micro-Coach is ready. Complete your habits to unlock tailored nudges!";
 
   const handleNextTip = () => {
     if (tipsPool.length <= 1) return;
-    const nextIdx = (tipIndex + 1) % tipsPool.length;
-    setTipIndex(nextIdx);
-    setNudge(tipsPool[nextIdx]);
+    setTipIndex((prev) => (prev + 1) % tipsPool.length);
   };
 
   return (
