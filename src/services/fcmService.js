@@ -68,10 +68,17 @@ export const setupNotifications = async (userId) => {
       
       // Visually display the notification when the web app is in the foreground
       if (Notification.permission === "granted" && payload.notification) {
-        new Notification(payload.notification.title, {
-          body: payload.notification.body,
-          icon: payload.notification.icon || 'https://streak-flow.netlify.app/logo192.png'
-        });
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((registration) => {
+            registration.showNotification(payload.notification.title, {
+              body: payload.notification.body,
+              icon: payload.notification.icon || 'https://streak-flow.netlify.app/logo192.png',
+              badge: 'https://streak-flow.netlify.app/badge-flame.png'
+            });
+          }).catch((err) => {
+            console.error("Failed to show foreground notification via SW:", err);
+          });
+        }
       }
     });
 
