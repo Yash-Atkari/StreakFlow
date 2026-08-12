@@ -22,6 +22,9 @@ const supabase = createClient(
 
 Deno.serve(async (req) => {
   try {
+    // Debug: Fetch all registered tokens
+    const { data: allTokens } = await supabase.from('fcm_tokens').select('*');
+
     // 4. Fetch targeted active reminders from database via RPC
     const { data: reminders, error } = await supabase.rpc('get_active_reminders');
 
@@ -46,7 +49,7 @@ Deno.serve(async (req) => {
         notification: {
           title: r.title,
           body: r.body,
-          icon: 'https://streak-flow.netlify.app/icon-flame.png',
+          icon: 'https://streak-flow.netlify.app/logo192.png',
           badge: 'https://streak-flow.netlify.app/badge-flame.png',
         }
       },
@@ -60,11 +63,19 @@ Deno.serve(async (req) => {
 
     // 7. Track successful dispatches to update last_notified_at cache in database
     const sentRitualIds: string[] = [];
+    const details: any[] = [];
     response.responses.forEach((res: any, index: number) => {
+      const fullToken = reminders[index].token;
+      const tokenPreview = fullToken.length > 20 
+        ? `${fullToken.substring(0, 10)}...${fullToken.substring(fullToken.length - 10)}` 
+        : fullToken;
+        
       if (res.success) {
         sentRitualIds.push(reminders[index].ritual_id);
+        details.push({ token: tokenPreview, status: 'success' });
       } else {
         console.warn(`Failed to send to token: ${reminders[index].token}. Error:`, res.error?.message);
+        details.push({ token: tokenPreview, status: 'failed', error: res.error?.message });
       }
     });
 
@@ -78,7 +89,12 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ sent: response.successCount, failures: response.failureCount }), 
+      JSON.stringify({ 
+        sent: response.successCount, 
+        failures: response.failureCount,
+        details: details,
+        allTokens: allTokens
+      }), 
       { headers: { "Content-Type": "application/json" }, status: 200 }
     );
 

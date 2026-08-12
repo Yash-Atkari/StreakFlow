@@ -65,7 +65,14 @@ export const setupNotifications = async (userId) => {
     // 4. Handle Foreground Messages
     onMessage(messaging, (payload) => {
       console.log("Foreground message received:", payload);
-      // Optional: Add a toast notification library here to show a UI alert
+      
+      // Visually display the notification when the web app is in the foreground
+      if (Notification.permission === "granted" && payload.notification) {
+        new Notification(payload.notification.title, {
+          body: payload.notification.body,
+          icon: payload.notification.icon || 'https://streak-flow.netlify.app/logo192.png'
+        });
+      }
     });
 
     hasSetup = true;

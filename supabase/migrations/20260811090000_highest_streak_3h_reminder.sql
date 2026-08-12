@@ -66,9 +66,9 @@ BEGIN
   FROM fcm_tokens t
   JOIN highest_streak_rituals h ON t.user_id = h.user_id
   WHERE 
-    -- 3. Check if we haven't already sent a notification in the last 2 hours
-    (h.last_notified_at IS NULL OR h.last_notified_at < v_now - interval '2 hours')
-    -- 4. Check if it's currently daytime (9:00 AM to 9:00 PM local time) to prevent late-night disturbances
-    AND extract(hour from (v_now AT TIME ZONE coalesce(h.timezone, 'UTC')))::integer BETWEEN 9 AND 23;
+    -- 3. Check if we haven't already sent a notification in the last 1 second (relaxed for testing)
+    (h.last_notified_at IS NULL OR h.last_notified_at < v_now - interval '1 second')
+    -- 4. Check if it's currently daytime (relaxed to 24 hours for testing/triggering)
+    AND extract(hour from (v_now AT TIME ZONE coalesce(h.timezone, 'UTC')))::integer BETWEEN 0 AND 23;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
