@@ -4,6 +4,9 @@ import AddRitualModal from "../components/AddRitualModal";
 import RitualCard from "../components/RitualCard";
 import CircularProgress from "../components/CircularProgress";
 import NivoraIcon from "../components/NivoraIcon";
+import AddUrgencyModal from "../components/AddUrgencyModal";
+import UrgencyList from "../components/UrgencyList";
+import { checkUrgencyNotifications, sendSystemNotification, requestNotificationPermission } from "../utils/urgencyScheduler";
 import { 
   FiLogOut, 
   FiAlertCircle, 
@@ -28,7 +31,7 @@ import SuggestionModal from "../components/SuggestionModal";
 import { usePremium } from "../contexts/PremiumContext";
 import AnalyticsTab from "../components/AnalyticsTab";
 import { useDialog } from "../contexts/DialogContext";
-import { playTap, playThemeSweep } from "../utils/audio";
+import { playTap, playThemeSweep, playNotificationSound } from "../utils/audio";
 
 export default function Home({ user }) {
   const { alert, confirm } = useDialog();
@@ -50,6 +53,45 @@ export default function Home({ user }) {
 
   // Active tab state
   const [activeTab, setActiveTab] = useState("tracker");
+  const [trackerSubTab, setTrackerSubTab] = useState("habits"); // "habits" or "urgency"
+  const [urgencyModalOpen, setUrgencyModalOpen] = useState(false);
+  const [selectedUrgencyGoal, setSelectedUrgencyGoal] = useState(null);
+  const [urgencyRefreshTrigger, setUrgencyRefreshTrigger] = useState(0);
+  const [urgencyGoals, setUrgencyGoals] = useState([]);
+  const [activeNotification, setActiveNotification] = useState(null);
+
+  // Swipe gesture touch tracking
+  const [touchStart, setTouchStart] = useState({ x: 0, y: 0 });
+  const [touchEnd, setTouchEnd] = useState({ x: 0, y: 0 });
+
+  const handleTouchStart = (e) => {
+    const t = e.targetTouches[0];
+    setTouchStart({ x: t.clientX, y: t.clientY });
+    setTouchEnd({ x: t.clientX, y: t.clientY });
+  };
+
+  const handleTouchMove = (e) => {
+    const t = e.targetTouches[0];
+    setTouchEnd({ x: t.clientX, y: t.clientY });
+  };
+
+  const handleTouchEnd = () => {
+    const diffX = touchStart.x - touchEnd.x;
+    const diffY = touchStart.y - touchEnd.y;
+    
+    // Swipe left (diffX > 50) means transition to urgency
+    // Swipe right (diffX < -50) means transition to habits
+    // Verify horizontal move is larger than vertical move to avoid accidental swipes on scrolls
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+      if (diffX > 0 && trackerSubTab === "habits") {
+        setTrackerSubTab("urgency");
+        playTap();
+      } else if (diffX < 0 && trackerSubTab === "urgency") {
+        setTrackerSubTab("habits");
+        playTap();
+      }
+    }
+  };
 
   // PWA Install prompt states
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -204,6 +246,73 @@ export default function Home({ user }) {
   useEffect(() => {
     fetchRituals();
   }, [fetchRituals]);
+
+  const fetchUrgencyGoals = useCallback(async () => {
+    if (!user) return;
+    let fetched = null;
+    try {
+      const { data, error } = await supabase
+        .from("urgency_goals")
+        .select("*");
+      if (!error && data) fetched = data;
+    } catch (err) {
+      // ignore
+    }
+
+    if (!fetched) {
+      const localStr = localStorage.getItem(`nivora_local_urgency_${user.id}`) || "[]";
+      try {
+        fetched = JSON.parse(localStr);
+      } catch (e) {
+        fetched = [];
+      }
+    }
+
+    setUrgencyGoals(fetched || []);
+  }, [user]);
+
+  useEffect(() => {
+    fetchUrgencyGoals();
+  }, [fetchUrgencyGoals, urgencyRefreshTrigger]);
+
+  // Request notification permissions
+  useEffect(() => {
+    if (notificationsEnabled) {
+      requestNotificationPermission();
+    }
+  }, [notificationsEnabled]);
+
+  // Background check for active urgency goals notifications
+  useEffect(() => {
+    if (!user || urgencyGoals.length === 0) return;
+
+    const runNotificationCheck = async () => {
+      const didTrigger = await checkUrgencyNotifications(
+        urgencyGoals,
+        user,
+        (title, body) => {
+          playNotificationSound();
+          sendSystemNotification(title, body);
+          setActiveNotification({ title, body });
+          
+          // Auto-dismiss the alert banner after 6 seconds
+          setTimeout(() => {
+            setActiveNotification(null);
+          }, 6000);
+        }
+      );
+
+      if (didTrigger) {
+        fetchUrgencyGoals();
+      }
+    };
+
+    runNotificationCheck();
+
+    // Check every 15 seconds
+    const interval = setInterval(runNotificationCheck, 15000);
+    return () => clearInterval(interval);
+  }, [user, urgencyGoals, fetchUrgencyGoals]);
 
   useEffect(() => {
     if (user && notificationsEnabled) {
@@ -447,138 +556,246 @@ export default function Home({ user }) {
               </div>
             )}
 
-            {/* Dashboard Stats */}
-            <div 
-              className="p-4 mb-4" 
-              style={{ 
-                background: "var(--theme-card-bg, #1f2937)", 
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.05)"
+            {/* Toggle Switch between Habits and Urgency */}
+            <div className="d-flex justify-content-center mb-4">
+              <div 
+                className="p-1 rounded-pill d-flex" 
+                style={{ 
+                  background: "rgba(255, 255, 255, 0.04)", 
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)"
+                }}
+              >
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-pill fw-bold border-0"
+                  style={{
+                    background: trackerSubTab === "habits" ? "var(--theme-primary, #ff6b00)" : "transparent",
+                    color: trackerSubTab === "habits" ? "#000000" : "#a1a1aa",
+                    fontSize: "13px",
+                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => { playTap(); setTrackerSubTab("habits"); }}
+                >
+                  Habits
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-pill fw-bold border-0"
+                  style={{
+                    background: trackerSubTab === "urgency" ? "var(--theme-primary, #ff6b00)" : "transparent",
+                    color: trackerSubTab === "urgency" ? "#000000" : "#a1a1aa",
+                    fontSize: "13px",
+                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => { playTap(); setTrackerSubTab("urgency"); }}
+                >
+                  Urgency
+                </button>
+              </div>
+            </div>
+
+            {/* Sliding swipe container */}
+            <div
+              className="swipe-container"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{
+                overflow: "hidden",
+                width: "100%",
+                position: "relative"
               }}
             >
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center gap-3">
-                  <NivoraIcon size={50} />
-                  <div>
-                    <div className="subheading mb-1">Longest Streak</div>
-                    <div style={{ fontSize: "28px", color: "var(--theme-primary, #ff6b00)", fontWeight: "bold", lineHeight: "1.2" }}>{longestStreak}</div>
+              <div
+                className="swipe-slides-wrapper"
+                style={{
+                  display: "flex",
+                  width: "200%",
+                  transform: `translate3d(${trackerSubTab === "habits" ? "0%" : "-50%"}, 0, 0)`,
+                  transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)"
+                }}
+              >
+                {/* Habits Slide */}
+                <div 
+                  className="swipe-slide" 
+                  style={{ 
+                    width: "50%", 
+                    flexShrink: 0,
+                    opacity: trackerSubTab === "habits" ? 1 : 0.05,
+                    transition: "opacity 0.25s ease, max-height 0.25s ease",
+                    pointerEvents: trackerSubTab === "habits" ? "auto" : "none",
+                    maxHeight: trackerSubTab === "habits" ? "none" : "0px",
+                    overflow: trackerSubTab === "habits" ? "visible" : "hidden"
+                  }}
+                >
+                  {/* Dashboard Stats */}
+                  <div 
+                    className="p-4 mb-4" 
+                    style={{ 
+                      background: "var(--theme-card-bg, #1f2937)", 
+                      borderRadius: "20px",
+                      border: "1px solid rgba(255, 255, 255, 0.05)"
+                    }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center gap-3">
+                        <NivoraIcon size={50} />
+                        <div>
+                          <div className="subheading mb-1">Longest Streak</div>
+                          <div style={{ fontSize: "28px", color: "var(--theme-primary, #ff6b00)", fontWeight: "bold", lineHeight: "1.2" }}>{longestStreak}</div>
+                        </div>
+                      </div>
+                      <div className="d-flex align-items-center gap-3">
+                        <div className="text-end">
+                          <div className="subheading mb-1">Today</div>
+                          <div style={{ fontSize: "16px", fontWeight: "bold" }}>{completedToday}/{total}</div>
+                        </div>
+                        <CircularProgress value={progress} />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Ritual List */}
+                  {loading ? (
+                    <div className="text-center mt-5 text-secondary">Loading your flow...</div>
+                  ) : (
+                    <>
+                      {rituals.length === 0 ? (
+                        <div className="text-center mt-5 mb-4 text-secondary">
+                          No {getHabitTerm()} defined. Start with one.
+                        </div>
+                      ) : (
+                        rituals.map((r, index) => (
+                          <div
+                            key={r.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, index)}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDrop={(e) => handleDrop(e, index)}
+                            className={`draggable-ritual-container ${
+                              draggedIndex === index ? "dragging" : ""
+                            } ${dragOverIndex === index ? "drag-over" : ""}`}
+                          >
+                            <RitualCard
+                              ritual={r}
+                              refresh={fetchRituals}
+                              onEdit={setSelectedRitual}
+                              openModal={() => setOpen(true)}
+                              onCelebrate={(streak) => setCelebrationStreak(streak)}
+                              onOpenPremium={() => setShowPremiumModal(true)}
+                            />
+                          </div>
+                        ))
+                      )}
+
+                      {/* Suggestion Box Habit Card */}
+                      <div
+                        className="mb-3 ritual-card-premium"
+                        style={{
+                          background: "var(--theme-card-bg, rgba(22, 22, 26, 0.7))",
+                          borderRadius: "18px",
+                          border: "1px solid var(--theme-card-border, rgba(255, 255, 255, 0.06))",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease"
+                        }}
+                        onClick={() => {
+                          playTap();
+                          setShowSuggestionModal(true);
+                        }}
+                      >
+                        <div className="d-flex align-items-center p-3 gap-3">
+                          <div
+                            style={{
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              border: "2px solid var(--theme-primary, #ff6b00)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "rgba(255, 107, 0, 0.1)",
+                              flexShrink: 0
+                            }}
+                          >
+                            <span style={{ fontSize: "12px", color: "var(--theme-primary, #ff6b00)", fontWeight: "bold" }}>?</span>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "15px", fontWeight: "bold", color: "white" }}>
+                              Suggestion Box
+                            </div>
+                            <div className="text-secondary" style={{ fontSize: "11px" }}>
+                              Tap to suggest improvements & features
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  <div style={{ height: "120px" }} />
                 </div>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="text-end">
-                    <div className="subheading mb-1">Today</div>
-                    <div style={{ fontSize: "16px", fontWeight: "bold" }}>{completedToday}/{total}</div>
-                  </div>
-                  <CircularProgress value={progress} />
+
+                {/* Urgency Slide */}
+                <div 
+                  className="swipe-slide px-1" 
+                  style={{ 
+                    width: "50%", 
+                    flexShrink: 0,
+                    opacity: trackerSubTab === "urgency" ? 1 : 0.05,
+                    transition: "opacity 0.25s ease, max-height 0.25s ease",
+                    pointerEvents: trackerSubTab === "urgency" ? "auto" : "none",
+                    maxHeight: trackerSubTab === "urgency" ? "none" : "0px",
+                    overflow: trackerSubTab === "urgency" ? "visible" : "hidden"
+                  }}
+                >
+                  <UrgencyList
+                    goals={urgencyGoals}
+                    refresh={fetchUrgencyGoals}
+                    onEdit={setSelectedUrgencyGoal}
+                    onOpenModal={() => setUrgencyModalOpen(true)}
+                  />
                 </div>
               </div>
             </div>
 
-
-
-            {/* Ritual List */}
-            {loading ? (
-              <div className="text-center mt-5 text-secondary">Loading your flow...</div>
-            ) : (
-              <>
-                {rituals.length === 0 ? (
-                  <div className="text-center mt-5 mb-4 text-secondary">
-                    No {getHabitTerm()} defined. Start with one.
-                  </div>
-                ) : (
-                  rituals.map((r, index) => (
-                    <div
-                      key={r.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, index)}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDrop={(e) => handleDrop(e, index)}
-                      className={`draggable-ritual-container ${
-                        draggedIndex === index ? "dragging" : ""
-                      } ${dragOverIndex === index ? "drag-over" : ""}`}
-                    >
-                      <RitualCard
-                        ritual={r}
-                        refresh={fetchRituals}
-                        onEdit={setSelectedRitual}
-                        openModal={() => setOpen(true)}
-                        onCelebrate={(streak) => setCelebrationStreak(streak)}
-                        onOpenPremium={() => setShowPremiumModal(true)}
-                      />
-                    </div>
-                  ))
-                )}
-
-                {/* Suggestion Box Habit Card */}
-                <div
-                  className="mb-3 ritual-card-premium"
-                  style={{
-                    background: "var(--theme-card-bg, rgba(22, 22, 26, 0.7))",
-                    borderRadius: "18px",
-                    border: "1px solid var(--theme-card-border, rgba(255, 255, 255, 0.06))",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease"
-                  }}
-                  onClick={() => {
-                    playTap();
-                    setShowSuggestionModal(true);
-                  }}
-                >
-                  <div className="d-flex align-items-center p-3 gap-3">
-                    <div
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        border: "2px solid var(--theme-primary, #ff6b00)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "rgba(255, 107, 0, 0.1)",
-                        flexShrink: 0
-                      }}
-                    >
-                      <span style={{ fontSize: "12px", color: "var(--theme-primary, #ff6b00)", fontWeight: "bold" }}>?</span>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "15px", fontWeight: "bold", color: "white" }}>
-                        Suggestion Box
-                      </div>
-                      <div className="text-secondary" style={{ fontSize: "11px" }}>
-                        Tap to suggest improvements & features
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
             {/* Add Button */}
-            <button
-              onClick={() => { playTap(); setOpen(true); setSelectedRitual(null); }}
-              className="floating-add-btn animate-bounce-on-hover"
-              style={{
-                position: "fixed",
-                bottom: "105px", // Moved up slightly to fit perfectly above the floating glass nav
-                right: "24px",
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, var(--theme-primary, #ff6b00) 0%, #ff8533 100%)",
-                color: "black",
-                border: "none",
-                cursor: "pointer",
-                zIndex: 100,
-                boxShadow: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
-              }}
-            >
-              <FiPlus size={28} />
-            </button>
-            <div style={{ height: "180px" }} />
+            {!(trackerSubTab === "urgency" && urgencyGoals.length === 0) && (
+              <button
+                onClick={() => { 
+                  playTap(); 
+                  if (trackerSubTab === "habits") {
+                    setOpen(true); 
+                    setSelectedRitual(null); 
+                  } else {
+                    setUrgencyModalOpen(true);
+                    setSelectedUrgencyGoal(null);
+                  }
+                }}
+                className="floating-add-btn animate-bounce-on-hover"
+                style={{
+                  position: "fixed",
+                  bottom: "105px", // Moved up slightly to fit perfectly above the floating glass nav
+                  right: "24px",
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, var(--theme-primary, #ff6b00) 0%, #ff8533 100%)",
+                  color: "black",
+                  border: "none",
+                  cursor: "pointer",
+                  zIndex: 100,
+                  boxShadow: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                }}
+              >
+                <FiPlus size={28} />
+              </button>
+            )}
           </>
         )}
 
@@ -744,6 +961,14 @@ export default function Home({ user }) {
           />
         )}
 
+        {urgencyModalOpen && (
+          <AddUrgencyModal
+            close={() => setUrgencyModalOpen(false)}
+            refresh={fetchUrgencyGoals}
+            urgencyGoal={selectedUrgencyGoal}
+          />
+        )}
+
         {/* Premium Billing/Upgrade Modal */}
         {showPremiumModal && (
           <PremiumModal 
@@ -767,6 +992,53 @@ export default function Home({ user }) {
             user={user}
             close={() => setShowSuggestionModal(false)}
           />
+        )}
+
+        {/* Urgency In-App Notification Banner */}
+        {activeNotification && (
+          <div 
+            className="in-app-notification-banner"
+            style={{
+              position: "fixed",
+              top: "20px",
+              left: "50%",
+              transform: "translate3d(-50%, 0, 0)",
+              width: "90%",
+              maxWidth: "400px",
+              background: "rgba(22, 22, 26, 0.95)",
+              border: "1px solid var(--theme-primary, #ff6b00)",
+              borderRadius: "16px",
+              padding: "16px",
+              zIndex: 9999,
+              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+              backdropFilter: "blur(10px)",
+              animation: "slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+            }}
+          >
+            <div className="d-flex align-items-center gap-3">
+              <div 
+                className="p-2 rounded-circle d-flex align-items-center justify-content-center" 
+                style={{ background: "rgba(255, 108, 0, 0.15)", color: "var(--theme-primary, #ff6b00)" }}
+              >
+                <NivoraIcon size={24} />
+              </div>
+              <div className="flex-grow-1">
+                <div className="fw-bold text-white" style={{ fontSize: "14px", textAlign: "left" }}>
+                  {activeNotification.title}
+                </div>
+                <div className="text-secondary mt-1" style={{ fontSize: "12px", textAlign: "left" }}>
+                  {activeNotification.body}
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setActiveNotification(null)}
+                style={{ background: "transparent", border: "none", color: "#a1a1aa", fontSize: "16px", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

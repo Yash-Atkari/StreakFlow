@@ -253,3 +253,15 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700 !important;
 }
 
+@keyframes slideDown {
+  0% {
+    transform: translate3d(-50%, -120%, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+    opacity: 1;
+  }
+}
+
+

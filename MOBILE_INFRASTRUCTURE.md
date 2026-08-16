@@ -1,4 +1,4 @@
-# StreakFlow Mobile Infrastructure Guide
+# Nivora Mobile Infrastructure Guide
 
 This document outlines the complete mobile infrastructure architecture integrated into StreakFlow. The architecture is optimized for **Capacitor + React + Supabase**, utilising environment-variable configurations, clean reusable services, proper error boundaries, privacy compliance, and native capabilities.
 

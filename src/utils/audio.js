@@ -223,3 +223,15 @@ export function playThemeSweep() {
   osc.start(now);
   osc.stop(now + duration);
 }
+
+/**
+ * Synthesizes a beautiful double chime for urgency notifications.
+ */
+export function playNotificationSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  // Two quick high plucks (G6 -> B6)
+  playNote(783.99, now, 0.12, "sine", 0.08);
+  playNote(987.77, now + 0.07, 0.18, "sine", 0.08);
+}
